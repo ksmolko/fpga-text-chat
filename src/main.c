@@ -9,12 +9,17 @@
 #include "xil_cache_l.h"
 #include "xscugic.h"
 
+#define IMG_BUF_PTR 0x00900000
+#define NUM_BYTES_BUFFER 5242880
+
 
 volatile bool TIMER_INTR_FLG;
 XScuGic InterruptController; /* Instance of the Interrupt Controller */
 static XScuGic_Config *GicConfig;/* The configuration parameters of thecontroller */
-//static XGpioPs my_Gpio;
-int NUM_BYTES_BUFFER = 5242880;
+int img = 0;
+char buf = 0;
+int * image_pointer[5] = {(int *)0x018D2008, (int *)0x020BB00C, (int *)0x028A4010, (int *)0x0308D014, (int *)0x03876018};
+XTmrCtr TimerInstancePtr;
 
 void Timer_InterruptHandler(XTmrCtr *data, u8 TmrCtrNumber)
 {
@@ -76,13 +81,6 @@ void setColours(int colour, int* image_pointer[5]){
 		yellow = 0xFF0087FF;
 		purple = 0xFF97FF00;
 	}
-	/*else if (colour == 2){
-		red = 0xFF000024;
-		green = 0xFF002400;
-		blue = 0xFF240000;
-		yellow = 0x000024FF;
-		purple = 0x002400FF;
-	}*/
 
 	int i = 0;
 
@@ -127,13 +125,12 @@ void setColours(int colour, int* image_pointer[5]){
 	}
 }
 
-int main()
+void setup()
 {
 	// Disable Caches (prevents tearing in images)
 	Xil_L1DCacheDisable();
 	Xil_L2CacheDisable();
 
-	XTmrCtr TimerInstancePtr;
 	int xStatus;
 	//-----------Setup Timer Interrupt---------------------------------------
 
@@ -159,10 +156,6 @@ int main()
 	/*Enable the interrupt for the device and then cause (simulate) an interrupt so the handlers will be called*/
 	XScuGic_Enable(&InterruptController, 61);
 	XScuGic_SetPriorityTriggerType(&InterruptController, 61, 0xa0, 3);
-	int img = 0;
-	char buf = 0;
-	int * image_buffer_pointer = (int *)0x00900000;
-	int * image_pointer[5] = {(int *)0x018D2008, (int *)0x020BB00C, (int *)0x028A4010, (int *)0x0308D014, (int *)0x03876018};
 
 	memset(image_pointer[0], 0, NUM_BYTES_BUFFER);
 	memset(image_pointer[1], 0, NUM_BYTES_BUFFER);
@@ -171,52 +164,60 @@ int main()
 	memset(image_pointer[4], 0, NUM_BYTES_BUFFER);
 
 	setColours(0, image_pointer);
+}
 
-	while(1) {
-		XTmrCtr_Start(&TimerInstancePtr,0);
-		while(TIMER_INTR_FLG == false){
-		}
-
-		TIMER_INTR_FLG = false;
-
-		if (buf == 0) {
-			memcpy(image_buffer_pointer, image_pointer[0], NUM_BYTES_BUFFER);
-		}
-
-		buf = inbyte();
-
-		if(buf == '1'){
-			setColours(0, image_pointer);
-			memcpy(image_buffer_pointer, image_pointer[img], NUM_BYTES_BUFFER);
-
-		}
-		else if(buf == '2'){
-			setColours(1, image_pointer);
-			memcpy(image_buffer_pointer, image_pointer[img], NUM_BYTES_BUFFER);
-
-		}
-		else if(buf == 'w'){ // Shift up
-			if(img == 0){
-				memcpy(image_buffer_pointer, image_pointer[4], NUM_BYTES_BUFFER);
-				img = 4;
-			}
-			else {
-				memcpy(image_buffer_pointer, image_pointer[img-1], NUM_BYTES_BUFFER);
-				img--;
-			}
-		}
-		else if(buf == 's'){ // Shift down
-			if(img == 4){
-				memcpy(image_buffer_pointer, image_pointer[0], NUM_BYTES_BUFFER);
-				img = 0;
-			}
-			else {
-				memcpy(image_buffer_pointer, image_pointer[img+1], NUM_BYTES_BUFFER);
-				img++;
-			}
-		}
+void tick()
+{
+	XTmrCtr_Start(&TimerInstancePtr,0);
+	while(TIMER_INTR_FLG == false){
 	}
 
+	TIMER_INTR_FLG = false;
+
+	if (buf == 0) {
+		memcpy((void*)IMG_BUF_PTR, image_pointer[0], NUM_BYTES_BUFFER);
+	}
+
+	buf = inbyte();
+
+	if(buf == '1'){
+		setColours(0, image_pointer);
+		memcpy((void*)IMG_BUF_PTR, image_pointer[img], NUM_BYTES_BUFFER);
+
+	}
+	else if(buf == '2'){
+		setColours(1, image_pointer);
+		memcpy((void*)IMG_BUF_PTR, image_pointer[img], NUM_BYTES_BUFFER);
+
+	}
+	else if(buf == 'w'){ // Shift up
+		if(img == 0){
+			memcpy((void*)IMG_BUF_PTR, image_pointer[4], NUM_BYTES_BUFFER);
+			img = 4;
+		}
+		else {
+			memcpy((void*)IMG_BUF_PTR, image_pointer[img-1], NUM_BYTES_BUFFER);
+			img--;
+		}
+	}
+	else if(buf == 's'){ // Shift down
+		if(img == 4){
+			memcpy((void*)IMG_BUF_PTR, image_pointer[0], NUM_BYTES_BUFFER);
+			img = 0;
+		}
+		else {
+			memcpy((void*)IMG_BUF_PTR, image_pointer[img+1], NUM_BYTES_BUFFER);
+			img++;
+		}
+	}
+}
+
+int main()
+{
+	setup();
+	while(1) {
+		tick();
+	}
 	return 0;
 }
 
