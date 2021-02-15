@@ -1,5 +1,6 @@
 proj/**
 .analytics
 .Xil
+Packages/**
 RemoteSystemsTempFiles/**
 IDE.log
