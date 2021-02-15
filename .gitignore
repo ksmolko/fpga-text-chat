@@ -1,0 +1,5 @@
+proj/**
+.analytics
+.Xil
+RemoteSystemsTempFiles/**
+IDE.log
