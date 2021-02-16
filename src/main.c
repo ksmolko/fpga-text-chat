@@ -1,9 +1,8 @@
 #include "xil_cache_l.h"
 
-#include "interrupts.h"
+#include "platform.h"
 #include "vga.h"
-#include "ethernet.h"
-
+#include "serv.h"
 
 void init()
 {
@@ -11,15 +10,17 @@ void init()
 	Xil_L1DCacheDisable();
 	Xil_L2CacheDisable();
 
+	timer_init();
 	interrupts_init();
 	vga_init();
 	ethernet_init();
+	echoserv_init();
 }
 
 void tick()
 {
-	interrupts_loop();
-	vga_loop();
+	//vga_loop(); // TODO: Enabling VGA stops ping from working. Likely a timing issue.
+	echoserv_loop();
 }
 
 int main()

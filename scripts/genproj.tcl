@@ -21,7 +21,15 @@ bsp setlib -name lwip211 -ver 1.3
 bsp write
 bsp reload
 catch {bsp regenerate}
+
+# Compiler options
 app config -name application -add compiler-misc {-Werror}
+
+# May need to enable lwip_dhcp in lwip bsp settings
+bsp config lwip_dhcp "true"
+bsp write
+bsp reload
+catch {bsp regenerate}
 
 # Clean up junk that gets generated
 exec rm -rf $ROOT_DIR/ps7* $ROOT_DIR/*.bit .Xil $ROOT_DIR/.Xil
