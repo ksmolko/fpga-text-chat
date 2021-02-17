@@ -1,6 +1,7 @@
 #include <stdbool.h>
 #include "xil_exception.h"
 #include "xparameters.h"
+#include "xscugic.h"
 #include "xscutimer.h"
 #include "lwip/dhcp.h"
 #include "platform.h"

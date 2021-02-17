@@ -19,7 +19,7 @@ void init()
 
 void tick()
 {
-	//vga_loop(); // TODO: Enabling VGA stops ping from working. Likely a timing issue.
+	vga_loop();
 	echoserv_loop();
 }
 
