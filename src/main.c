@@ -17,14 +17,14 @@ void init()
 	vga_init();
 	shell_init();
 	ethernet_init();
-	echoserv_init();
+	serv_init(CHAT_SERV, CHAT_PORT);
 }
 
 void tick()
 {
 	vga_loop();
 	shell_loop();
-	echoserv_loop();
+	serv_loop();
 }
 
 int main()

@@ -6,6 +6,7 @@
 #include "vga.h"
 #include "shell.h"
 
+#define CMD_LEN 256
 #define CMD_SWITCH_SCREEN "switch"
 #define UART_BASEADDR XPAR_PS7_UART_1_BASEADDR
 
@@ -22,7 +23,7 @@ void shell_init()
 
 void shell_loop()
 {
-    static char buf[256] = "";
+    static char buf[CMD_LEN] = "";
     char c;
 
     // Wait for input from UART via the terminal
@@ -38,7 +39,9 @@ void shell_loop()
             buf[0] = '\0';
         }
         else {
-            strncat(buf, &c, 1);
+            if(strlen(buf) < CMD_LEN - 1){
+                strncat(buf, &c, 1);
+            }
         }
     }
 }
