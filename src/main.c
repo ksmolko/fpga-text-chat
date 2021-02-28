@@ -3,7 +3,7 @@
 #include "platform.h"
 #include "vga.h"
 #include "serv.h"
-#include "menu.h"
+#include "shell.h"
 
 
 void init()
@@ -15,7 +15,7 @@ void init()
 	timer_init();
 	interrupts_init();
 	vga_init();
-	menu_init();
+	shell_init();
 	ethernet_init();
 	echoserv_init();
 }
@@ -23,7 +23,7 @@ void init()
 void tick()
 {
 	vga_loop();
-	menu_loop();
+	shell_loop();
 	echoserv_loop();
 }
 
