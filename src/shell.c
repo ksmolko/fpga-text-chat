@@ -5,14 +5,17 @@
 #include "xil_io.h"
 #include "vga.h"
 #include "shell.h"
+#include "serv.h"
 #include "client.h"
 
 #define CMD_LEN 256
 #define CMD_CONNECT "connect"
 #define CMD_SWITCH_SCREEN "switch"
+#define CMD_LISTEN "listen"
 #define STATUS_FAIL 0
 #define STATUS_SUCCESS 1
 #define IP_USAGE "Usage: connect [ip] [port]\n\r"
+#define LISTEN_USAGE "Usage: listen [port]\n\r"
 #define UART_BASEADDR XPAR_PS7_UART_1_BASEADDR
 
 
@@ -33,7 +36,9 @@ void shell_loop()
     u16 port;
     char c;
     char *token;
-    ip_addr_t *ip = 0;
+    char *context;
+    ip_addr_t ip;
+    IP4_ADDR(&ip, 0, 0, 0, 0);
 
     // Wait for input from UART via the terminal
 	if (XUartPs_IsReceiveData(UART_BASEADDR)){
@@ -41,7 +46,7 @@ void shell_loop()
         xil_printf("%c", c);
         if (c == '\r' || c == '\n'){
             xil_printf("\n\r");
-            token = strtok(buf, " ");
+            token = strtok_r(buf, " ", &context);
 
             // List of all commands
             if (strcmp(token, CMD_SWITCH_SCREEN) == 0) {
@@ -49,7 +54,7 @@ void shell_loop()
                 vga_change();
             }
             else if (strcmp(token, CMD_CONNECT) == 0) {
-                token = strtok(NULL, " ");
+                token = strtok_r(NULL, " ", &context);
 
                 // Parse connect command
                 if (token == NULL) {
@@ -57,12 +62,12 @@ void shell_loop()
                     xil_printf(IP_USAGE);
                 }
                 else {
-                    status = ipaddr_aton(token, ip);
+                    status = ipaddr_aton(token, &ip);
                     if (!status) {
                         xil_printf(IP_USAGE);
                     }
                     else {
-                        token = strtok(NULL, " ");
+                        token = strtok_r(NULL, " ", &context);
                         if (token == NULL) {
                             status = STATUS_FAIL;
                             xil_printf(IP_USAGE);
@@ -77,9 +82,21 @@ void shell_loop()
                     }
                 }
                 if (status == STATUS_SUCCESS) {
-                    client_connect(ip, port);
+                    client_connect(&ip, port);
                 }
             }
+            else if (strcmp(token, CMD_LISTEN) == 0) {
+                token = strtok_r(NULL, " ", &context);
+
+                if (token == NULL) {
+                    xil_printf(LISTEN_USAGE);
+                }
+                else {
+                    port = atoi(token);
+                    serv_init(CHAT_SERV, port);
+                }
+            }
+
             buf[0] = '\0';
         }
         else {

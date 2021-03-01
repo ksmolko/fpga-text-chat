@@ -21,7 +21,6 @@ void init()
 	vga_init();
 	shell_init();
 	ethernet_init();
-	serv_init(CHAT_SERV, CHAT_PORT);
 }
 
 void tick()

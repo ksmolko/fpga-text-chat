@@ -78,8 +78,10 @@ void serv_init(int serv_type, u16 port)
 
 	if (serv_type == ECHO_SERV) {
 		tcp_accept(pcb, echo_accept_callback);
+		xil_printf("Echo server started on port %d\n\r", port);
 	}
 	else if (serv_type == CHAT_SERV) {
+		xil_printf("Chat server started on port %d\n\r", port);
 		tcp_accept(pcb, chat_accept_callback);
 	}
 	else {
