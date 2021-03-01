@@ -20,7 +20,7 @@ void client_connect(const ip_addr_t *ip, u16 port)
         return;
 	}
 
-    status = tcp_bind(pcb, IPADDR_TYPE_V4, port);
+    status = tcp_bind(pcb, IP_ADDR_ANY, port);
 	if (status != ERR_OK) {
 		xil_printf("ERROR: In function %s: Unable to bind to port %d\n\r", __FUNCTION__, port);
         return;

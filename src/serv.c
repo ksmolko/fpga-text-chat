@@ -60,7 +60,7 @@ void serv_init(int serv_type, u16 port)
 		xil_printf("ERROR: In function %s: Out of memory for PCB\n\r", __FUNCTION__);
 	}
 
-	status = tcp_bind(pcb, IPADDR_TYPE_V4, port);
+	status = tcp_bind(pcb, IP_ADDR_ANY, port);
 	if (status != ERR_OK) {
 		xil_printf("ERROR: In function %s: Unable to bind to port %d\n\r", __FUNCTION__, port);
 	}
@@ -76,7 +76,10 @@ void serv_init(int serv_type, u16 port)
 	pcb = tcp_listen(pcb);
 	tcp_arg(pcb, NULL);
 
-	if (serv_type == ECHO_SERV) {
+	if (pcb == NULL) {
+		xil_printf("ERROR: In function %s: PCB is NULL");
+	}
+	else if (serv_type == ECHO_SERV) {
 		tcp_accept(pcb, echo_accept_callback);
 		xil_printf("Echo server started on port %d\n\r", port);
 	}
