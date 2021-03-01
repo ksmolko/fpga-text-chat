@@ -35,9 +35,21 @@ static int kb_space_center_x = 855;
 static int kb_space_center_y = 976;
 static int counter = 0;
 
-static void set_kb_square_key(int* image_pointer, int center_x, int center_y);
-static void set_kb_rectangle_key(int* image_pointer, int center_x, int center_y);
-static void set_kb_space_key(int* image_pointer, int center_x, int center_y);
+// Setting up a predefined address to access the sprites images
+// The sprites are uploaded to the board through xsct dow -data
+// TODO: Find a way to do this without using xsct shell
+//static int* sprite_pointer = (int*)0x05000000;
+//static int* sprite_pointer[2] = {(int*)0x05000000, (int*)0x0500C940};
+
+static int* sprite_pointer[49] = {(int*)0x5000000, (int*)0x5009c40, (int*)0x5013880, (int*)0x501d4c0, (int*)0x5027100, (int*)0x5030d40, (int*)0x503a980, (int*)0x50445c0, (int*)0x504e200, (int*)0x5057e40, (int*)0x5061a80, (int*)0x506b6c0, \
+		(int*)0x507ef40, (int*)0x5088b80, (int*)0x50927c0, (int*)0x509c400, (int*)0x50a6040, (int*)0x50afc80, (int*)0x50b98c0, (int*)0x50c3500, (int*)0x50cd140, (int*)0x50d6d80, (int*)0x50e09c0, (int*)0x50ea600, \
+		(int*)0x50fde80, (int*)0x5107ac0, (int*)0x5111700, (int*)0x511b340, (int*)0x5124f80, (int*)0x512ebc0, (int*)0x5138800, (int*)0x5142440, (int*)0x514c080, (int*)0x5155cc0, (int*)0x515f900, (int*)0x5169540, \
+		(int*)0x517cdc0, (int*)0x5186a00, (int*)0x5190640, (int*)0x519a280, (int*)0x51a3ec0, (int*)0x51adb00, (int*)0x51b7740, (int*)0x51c1380, (int*)0x51cafc0, (int*)0x51d4c00, (int*)0x51de840, (int*)0x51e8480, \
+		(int*)0x51fbd00};
+
+static void set_kb_square_key(int* image_pointer, int* sprite_pointer, int center_x, int center_y);
+static void set_kb_rectangle_key(int* image_pointer, int* sprite_pointer, int center_x, int center_y);
+static void set_kb_space_key(int* image_pointer, int* sprite_pointer, int center_x, int center_y);
 
 void setColours(int colour, int* image_pointer[5])
 {
@@ -185,66 +197,75 @@ void setColours(int colour, int* image_pointer[5])
 	for (int i = 0; i < KEYBOARD_NUM_OF_KEY_Y; ++i) {
 		for (int j = 0; j < KEYBOARD_NUM_OF_KEY_X; ++j) {
 			if (j != KEYBOARD_NUM_OF_KEY_X-1) {
-				set_kb_square_key(image_pointer[1], kb_key_center_x[j], kb_key_center_y[i]);
+				set_kb_square_key(image_pointer[1], sprite_pointer[i*KEYBOARD_NUM_OF_KEY_X + j], kb_key_center_x[j], kb_key_center_y[i]);
 			} else {
-				set_kb_rectangle_key(image_pointer[1], kb_key_center_x[j], kb_key_center_y[i]);
+				set_kb_rectangle_key(image_pointer[1], sprite_pointer[i*KEYBOARD_NUM_OF_KEY_X + j], kb_key_center_x[j], kb_key_center_y[i]);
 			}
 		}
 	}
 
-	set_kb_space_key(image_pointer[1], kb_space_center_x, kb_space_center_y);
+	set_kb_space_key(image_pointer[1], sprite_pointer[48], kb_space_center_x, kb_space_center_y);
 }
 
-static void set_kb_square_key(int* image_pointer, int center_x, int center_y) {
+static void set_kb_square_key(int* image_pointer, int* sprite_pointer, int center_x, int center_y) {
 	int start_x = center_x - KEYBOARD_SQUARE_KEY_SIZE/2;
 	int start_y = center_y - KEYBOARD_SQUARE_KEY_SIZE/2;
 
 	int end_x = center_x + KEYBOARD_SQUARE_KEY_SIZE/2;
 	int end_y = center_y + KEYBOARD_SQUARE_KEY_SIZE/2;
 
-	int red = RGB_RED;
+	//int red = RGB_RED;
 	// Set color for key here
 	// Or copy spites info to here
+	int sprite_offset = 0;
 	for (int y = start_y; y < end_y; ++y) {
 		for (int x = start_x; x < end_x; ++x) {
 			int addr_offset = HORIZONTAL_PIXEL_MAX*y + x;
-			memcpy(image_pointer + addr_offset, &red, 4);
+			//memcpy(image_pointer + addr_offset, &red, 4);
+			memcpy(image_pointer + addr_offset, sprite_pointer + sprite_offset, 4);
+			++sprite_offset;
 		}
 	}
 }
 
-static void set_kb_rectangle_key(int* image_pointer, int center_x, int center_y) {
+static void set_kb_rectangle_key(int* image_pointer, int* sprite_pointer, int center_x, int center_y) {
 	int start_x = center_x - KEYBOARD_RECT_KEY_SIZE_X/2;
 	int start_y = center_y - KEYBOARD_RECT_KEY_SIZE_Y/2;
 
 	int end_x = center_x + KEYBOARD_RECT_KEY_SIZE_X/2;
 	int end_y = center_y + KEYBOARD_RECT_KEY_SIZE_Y/2;
 
-	int red = RGB_RED;
+	//int red = RGB_RED;
 	// Set color for key here
 	// Or copy spites info to here
+	int sprite_offset = 0;
 	for (int y = start_y; y < end_y; ++y) {
 		for (int x = start_x; x < end_x; ++x) {
 			int addr_offset = HORIZONTAL_PIXEL_MAX*y + x;
-			memcpy(image_pointer + addr_offset, &red, 4);
+			//memcpy(image_pointer + addr_offset, &red, 4);
+			memcpy(image_pointer + addr_offset, sprite_pointer + sprite_offset, 4);
+			++sprite_offset;
 		}
 	}
 }
 
-static void set_kb_space_key(int* image_pointer, int center_x, int center_y) {
+static void set_kb_space_key(int* image_pointer, int* sprite_pointer, int center_x, int center_y) {
 	int start_x = center_x - KEYBOARD_SPACE_SIZE_X/2;
 	int start_y = center_y - KEYBOARD_SPACE_SIZE_Y/2;
 
 	int end_x = center_x + KEYBOARD_SPACE_SIZE_X/2;
 	int end_y = center_y + KEYBOARD_SPACE_SIZE_Y/2;
 
-	int red = RGB_RED;
+	//int red = RGB_RED;
 	// Set color for key here
 	// Or copy spites info to here
+	int sprite_offset = 0;
 	for (int y = start_y; y < end_y; ++y) {
 		for (int x = start_x; x < end_x; ++x) {
 			int addr_offset = HORIZONTAL_PIXEL_MAX*y + x;
-			memcpy(image_pointer + addr_offset, &red, 4);
+			//memcpy(image_pointer + addr_offset, &red, 4);
+			memcpy(image_pointer + addr_offset, sprite_pointer + sprite_offset, 4);
+			++sprite_offset;
 		}
 	}
 }
