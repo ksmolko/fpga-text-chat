@@ -4,7 +4,11 @@
 #include "vga.h"
 #include "serv.h"
 #include "shell.h"
+#include "client.h"
+#include "state.h"
 
+
+int state = STATE_MENU;
 
 void init()
 {
@@ -22,9 +26,15 @@ void init()
 
 void tick()
 {
-	vga_loop();
-	shell_loop();
-	serv_loop();
+	if (state == STATE_MENU) {
+		vga_loop();
+		shell_loop();
+		serv_loop();
+	}
+	else if (state == STATE_CALL) {
+		vga_loop();
+		client_loop();
+	}
 }
 
 int main()

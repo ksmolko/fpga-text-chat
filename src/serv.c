@@ -7,19 +7,20 @@
 #include "netif/xadapter.h"
 #include "platform.h"
 #include "serv.h"
+#include "state.h"
 
 #define BUF_SIZE 1024
 
-
-static err_t echo_accept_callback(void *arg, struct tcp_pcb *pcb, err_t err);
-static err_t echo_recv_callback(void *arg, struct tcp_pcb *pcb, struct pbuf *p, err_t err);
-static err_t chat_accept_callback(void *arg, struct tcp_pcb *pcb, err_t err);
-static err_t chat_recv_callback(void *arg, struct tcp_pcb *pcb, struct pbuf *p, err_t err);
-void tcp_tmr(void);
-
 typedef struct tcp_pcb tcp_pcb;
 
+static err_t echo_accept_callback(void *arg, tcp_pcb *pcb, err_t err);
+static err_t echo_recv_callback(void *arg, tcp_pcb *pcb, struct pbuf *p, err_t err);
+static err_t chat_accept_callback(void *arg, tcp_pcb *pcb, err_t err);
+static err_t chat_recv_callback(void *arg, tcp_pcb *pcb, struct pbuf *p, err_t err);
+void tcp_tmr(void);
+
 extern volatile int dhcp_timeout_counter;
+extern int state;
 static struct netif netif;
 
 void ethernet_init()
@@ -49,7 +50,7 @@ void ethernet_init()
 	xil_printf("Gateway: %d.%d.%d.%d\n\r", ip4_addr1(&gw), ip4_addr2(&gw), ip4_addr3(&gw), ip4_addr4(&gw));
 }
 
-void serv_init(int serv_type, int port)
+void serv_init(int serv_type, u16 port)
 {
 	int status;
 	tcp_pcb *pcb;
@@ -64,7 +65,12 @@ void serv_init(int serv_type, int port)
 		xil_printf("ERROR: In function %s: Unable to bind to port %d\n\r", __FUNCTION__, port);
 	}
 	else {
-		xil_printf("Bind Successful\n\r");
+		if (serv_type == ECHO_SERV) {
+			xil_printf("Echo server bind successful on port %d\n\r", port);
+		}
+		else if (serv_type == CHAT_SERV) {
+			xil_printf("Chat server bind successful on port %d\n\r", port);
+		}
 	}
 
 	pcb = tcp_listen(pcb);
@@ -88,30 +94,30 @@ void serv_loop()
 	xemacif_input(&netif);
 }
 
-static err_t echo_accept_callback(void *arg, tcp_pcb *newpcb, err_t err)
+static err_t echo_accept_callback(void *arg, tcp_pcb *pcb, err_t err)
 {
 	LWIP_UNUSED_ARG(err);
 
-	tcp_recv(newpcb, echo_recv_callback);
+	tcp_recv(pcb, echo_recv_callback);
 
 	return ERR_OK;
 }
 
-static err_t echo_recv_callback(void *arg, tcp_pcb *newpcb, struct pbuf *p, err_t err)
+static err_t echo_recv_callback(void *arg, tcp_pcb *pcb, struct pbuf *p, err_t err)
 {
 	LWIP_UNUSED_ARG(arg);
 
 	if(!p) {
-		tcp_close(newpcb);
-		tcp_recv(newpcb, NULL);
+		tcp_close(pcb);
+		tcp_recv(pcb, NULL);
 		return ERR_OK;
 	}
 
 	if (err == ERR_OK && p != NULL) {
-		tcp_recved(newpcb, p->len);
+		tcp_recved(pcb, p->len);
 
-		if (tcp_sndbuf(newpcb) > p->len) {
-			err = tcp_write(newpcb, p->payload, p->len, TCP_WRITE_FLAG_COPY);
+		if (tcp_sndbuf(pcb) > p->len) {
+			err = tcp_write(pcb, p->payload, p->len, TCP_WRITE_FLAG_COPY);
 		}
 		else {
 			xil_printf("ERROR: In function %s: Buffer too large for tcp_sndbuf\n\r", __FUNCTION__);
@@ -122,7 +128,7 @@ static err_t echo_recv_callback(void *arg, tcp_pcb *newpcb, struct pbuf *p, err_
 	return ERR_OK;
 }
 
-static err_t chat_accept_callback(void *arg, tcp_pcb *newpcb, err_t err)
+static err_t chat_accept_callback(void *arg, tcp_pcb *pcb, err_t err)
 {
 	LWIP_UNUSED_ARG(err);
 
@@ -135,12 +141,13 @@ static err_t chat_accept_callback(void *arg, tcp_pcb *newpcb, err_t err)
 
 	while (!valid) {
 		if (c == 'y' || c == 'Y') {
-			tcp_recv(newpcb, chat_recv_callback);
+			tcp_recv(pcb, chat_recv_callback);
+			state = STATE_CALL;
 			valid = true;
 		}
 		else if (c == 'n' || c == 'N') {
-			tcp_close(newpcb);
-			tcp_recv(newpcb, NULL);
+			tcp_close(pcb);
+			tcp_recv(pcb, NULL);
 			valid = true;
 		}
 		else {
@@ -150,7 +157,7 @@ static err_t chat_accept_callback(void *arg, tcp_pcb *newpcb, err_t err)
 	return ERR_OK;
 }
 
-static err_t chat_recv_callback(void *arg, tcp_pcb *newpcb, struct pbuf *p, err_t err)
+static err_t chat_recv_callback(void *arg, tcp_pcb *pcb, struct pbuf *p, err_t err)
 {
 	// Stub
 	return ERR_OK;

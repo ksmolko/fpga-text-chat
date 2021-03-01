@@ -7,5 +7,5 @@
 
 
 void ethernet_init();
-void serv_init();
+void serv_init(int serv_type, u16 port);
 void serv_loop();

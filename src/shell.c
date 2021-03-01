@@ -5,9 +5,14 @@
 #include "xil_io.h"
 #include "vga.h"
 #include "shell.h"
+#include "client.h"
 
 #define CMD_LEN 256
+#define CMD_CONNECT "connect"
 #define CMD_SWITCH_SCREEN "switch"
+#define STATUS_FAIL 0
+#define STATUS_SUCCESS 1
+#define IP_USAGE "Usage: connect [ip] [port]\n\r"
 #define UART_BASEADDR XPAR_PS7_UART_1_BASEADDR
 
 
@@ -24,7 +29,11 @@ void shell_init()
 void shell_loop()
 {
     static char buf[CMD_LEN] = "";
+    int status;
+    u16 port;
     char c;
+    char *token;
+    ip_addr_t *ip = 0;
 
     // Wait for input from UART via the terminal
 	if (XUartPs_IsReceiveData(UART_BASEADDR)){
@@ -32,9 +41,44 @@ void shell_loop()
         xil_printf("%c", c);
         if (c == '\r' || c == '\n'){
             xil_printf("\n\r");
-            if (strcmp(buf, CMD_SWITCH_SCREEN) == 0) {
+            token = strtok(buf, " ");
+
+            // List of all commands
+            if (strcmp(token, CMD_SWITCH_SCREEN) == 0) {
                 xil_printf("Changing screen\n\r");
                 vga_change();
+            }
+            else if (strcmp(token, CMD_CONNECT) == 0) {
+                token = strtok(NULL, " ");
+
+                // Parse connect command
+                if (token == NULL) {
+                    status = STATUS_FAIL;
+                    xil_printf(IP_USAGE);
+                }
+                else {
+                    status = ipaddr_aton(token, ip);
+                    if (!status) {
+                        xil_printf(IP_USAGE);
+                    }
+                    else {
+                        token = strtok(NULL, " ");
+                        if (token == NULL) {
+                            status = STATUS_FAIL;
+                            xil_printf(IP_USAGE);
+                        }
+                        else {
+                            port = atoi(token);
+                            if (port == 0) {
+                                status = STATUS_FAIL;
+                                xil_printf(IP_USAGE);
+                            }
+                        }
+                    }
+                }
+                if (status == STATUS_SUCCESS) {
+                    client_connect(ip, port);
+                }
             }
             buf[0] = '\0';
         }
