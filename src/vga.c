@@ -6,12 +6,39 @@
 #define NORMAL_COLOURS 0
 #define ALTERNATE_COLOURS 1
 #define HORIZONTAL_PIXEL_MAX 1920
+#define HORIZONTAL_PIXEL_MIDDLE HORIZONTAL_PIXEL_MAX/2
 #define VERTICAL_PIXEL_MAX 1080
+#define VERTICAL_PIXEL_MIDDLE VERTICAL_PIXEL_MAX/2
 #define NUM_BYTES_BUFFER HORIZONTAL_PIXEL_MAX*VERTICAL_PIXEL_MAX*4
+
+#define KEYBOARD_HORIZONTAL_PIXEL 1410
+#define KEYBOARD_VERTICAL_PIXEL 590
+#define KEYBOARD_SQUARE_KEY_SIZE 100
+#define KEYBOARD_RECT_KEY_SIZE_X 200
+#define KEYBOARD_RECT_KEY_SIZE_Y 100
+#define KEYBOARD_SPACE_SIZE_X 300
+#define KEYBOARD_SPACE_SIZE_Y 150
+
+#define KEYBOARD_START_PIXEL_X HORIZONTAL_PIXEL_MIDDLE-KEYBOARD_HORIZONTAL_PIXEL/2
+#define KEYBOARD_START_PIXEL_Y 461
+
+#define KEYBOARD_NUM_OF_KEY_X 12
+#define KEYBOARD_NUM_OF_KEY_Y 4 // Not counting space key
+
+#define RGB_RED 0xFF0000FF
 
 
 static int * image_pointer[5] = {(int *)0x018D2008, (int *)0x020BB00C, (int *)0x028A4010, (int *)0x0308D014, (int *)0x03876018};
+static int kb_key_center_x[12] = {305, 415, 525, 635, 745, 855, 965, 1075, 1185, 1295, 1405, 1615};
+static int kb_key_center_y[4] = {511, 621, 731, 841};	// Don't count space
+static int kb_space_center_x = 855;
+static int kb_space_center_y = 976;
 static int counter = 0;
+
+static void set_kb_square_key(int* image_pointer, int center_x, int center_y);
+static void set_kb_rectangle_key(int* image_pointer, int center_x, int center_y);
+static void set_kb_space_key(int* image_pointer, int center_x, int center_y);
+
 void setColours(int colour, int* image_pointer[5])
 {
 
@@ -32,9 +59,9 @@ void setColours(int colour, int* image_pointer[5])
 	int addr_offset;
 
 	// Assigning colors to each pixel
-	for (int y = 0; y < 1024; y++) {
-		for (int x = 0; x < 1280; x++) {
-			addr_offset = 1280*y + x;
+	for (int y = 0; y < VERTICAL_PIXEL_MAX; y++) {
+		for (int x = 0; x < HORIZONTAL_PIXEL_MAX; x++) {
+			addr_offset = HORIZONTAL_PIXEL_MAX*y + x;
 
 			// A simple chat UI: a yellow upper part for chat box
 			// A green option bar below with red buttons
@@ -148,6 +175,78 @@ void setColours(int colour, int* image_pointer[5])
 		}
 	}
 
+	// New loop for memcpy specific location
+	// Onscreen keyboard layout
+	// Each normal key is 100x100, 4 specials function keys have dimension 200x100
+	// The spacebar is 300x150 (should be at the middle)
+	// In total, we need an area of 1300x400 for the keyboards + 300x150 at the bottom for the space key
+	// Plus maybe some gap between the keys (10 pixels?)
+
+	for (int i = 0; i < KEYBOARD_NUM_OF_KEY_Y; ++i) {
+		for (int j = 0; j < KEYBOARD_NUM_OF_KEY_X; ++j) {
+			if (j != KEYBOARD_NUM_OF_KEY_X-1) {
+				set_kb_square_key(image_pointer[1], kb_key_center_x[j], kb_key_center_y[i]);
+			} else {
+				set_kb_rectangle_key(image_pointer[1], kb_key_center_x[j], kb_key_center_y[i]);
+			}
+		}
+	}
+
+	set_kb_space_key(image_pointer[1], kb_space_center_x, kb_space_center_y);
+}
+
+static void set_kb_square_key(int* image_pointer, int center_x, int center_y) {
+	int start_x = center_x - KEYBOARD_SQUARE_KEY_SIZE/2;
+	int start_y = center_y - KEYBOARD_SQUARE_KEY_SIZE/2;
+
+	int end_x = center_x + KEYBOARD_SQUARE_KEY_SIZE/2;
+	int end_y = center_y + KEYBOARD_SQUARE_KEY_SIZE/2;
+
+	int red = RGB_RED;
+	// Set color for key here
+	// Or copy spites info to here
+	for (int y = start_y; y < end_y; ++y) {
+		for (int x = start_x; x < end_x; ++x) {
+			int addr_offset = HORIZONTAL_PIXEL_MAX*y + x;
+			memcpy(image_pointer + addr_offset, &red, 4);
+		}
+	}
+}
+
+static void set_kb_rectangle_key(int* image_pointer, int center_x, int center_y) {
+	int start_x = center_x - KEYBOARD_RECT_KEY_SIZE_X/2;
+	int start_y = center_y - KEYBOARD_RECT_KEY_SIZE_Y/2;
+
+	int end_x = center_x + KEYBOARD_RECT_KEY_SIZE_X/2;
+	int end_y = center_y + KEYBOARD_RECT_KEY_SIZE_Y/2;
+
+	int red = RGB_RED;
+	// Set color for key here
+	// Or copy spites info to here
+	for (int y = start_y; y < end_y; ++y) {
+		for (int x = start_x; x < end_x; ++x) {
+			int addr_offset = HORIZONTAL_PIXEL_MAX*y + x;
+			memcpy(image_pointer + addr_offset, &red, 4);
+		}
+	}
+}
+
+static void set_kb_space_key(int* image_pointer, int center_x, int center_y) {
+	int start_x = center_x - KEYBOARD_SPACE_SIZE_X/2;
+	int start_y = center_y - KEYBOARD_SPACE_SIZE_Y/2;
+
+	int end_x = center_x + KEYBOARD_SPACE_SIZE_X/2;
+	int end_y = center_y + KEYBOARD_SPACE_SIZE_Y/2;
+
+	int red = RGB_RED;
+	// Set color for key here
+	// Or copy spites info to here
+	for (int y = start_y; y < end_y; ++y) {
+		for (int x = start_x; x < end_x; ++x) {
+			int addr_offset = HORIZONTAL_PIXEL_MAX*y + x;
+			memcpy(image_pointer + addr_offset, &red, 4);
+		}
+	}
 }
 
 void vga_init()
