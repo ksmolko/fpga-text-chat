@@ -21,6 +21,7 @@ void init()
 	vga_init();
 	shell_init();
 	ethernet_init();
+	serv_init(ECHO_SERV, ECHO_PORT);
 }
 
 void tick()
@@ -33,6 +34,7 @@ void tick()
 	else if (state == STATE_CALL) {
 		vga_loop();
 		client_loop();
+		serv_loop();
 	}
 }
 

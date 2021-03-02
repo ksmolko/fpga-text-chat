@@ -17,6 +17,7 @@ static err_t echo_accept_callback(void *arg, tcp_pcb *pcb, err_t err);
 static err_t echo_recv_callback(void *arg, tcp_pcb *pcb, struct pbuf *p, err_t err);
 static err_t chat_accept_callback(void *arg, tcp_pcb *pcb, err_t err);
 static err_t chat_recv_callback(void *arg, tcp_pcb *pcb, struct pbuf *p, err_t err);
+static void chat_err_callback(void *arg, err_t err);
 void tcp_tmr(void);
 
 extern volatile int dhcp_timeout_counter;
@@ -75,6 +76,7 @@ void serv_init(int serv_type, u16 port)
 
 	pcb = tcp_listen(pcb);
 	tcp_arg(pcb, NULL);
+	tcp_err(pcb, chat_err_callback);
 
 	if (pcb == NULL) {
 		xil_printf("ERROR: In function %s: PCB is NULL");
@@ -102,6 +104,7 @@ void serv_loop()
 static err_t echo_accept_callback(void *arg, tcp_pcb *pcb, err_t err)
 {
 	LWIP_UNUSED_ARG(err);
+	xil_printf("Echo connection request\n\r");
 
 	tcp_recv(pcb, echo_recv_callback);
 
@@ -111,6 +114,8 @@ static err_t echo_accept_callback(void *arg, tcp_pcb *pcb, err_t err)
 static err_t echo_recv_callback(void *arg, tcp_pcb *pcb, struct pbuf *p, err_t err)
 {
 	LWIP_UNUSED_ARG(arg);
+
+	xil_printf("Echo respond\n\r");
 
 	if(!p) {
 		tcp_close(pcb);
@@ -137,7 +142,7 @@ static err_t chat_accept_callback(void *arg, tcp_pcb *pcb, err_t err)
 {
 	LWIP_UNUSED_ARG(err);
 
-	char c;
+	/*char c;
 	bool valid = false;
 
 	xil_printf("Incoming Connection Request. Accept? [y/n]: ");
@@ -158,7 +163,10 @@ static err_t chat_accept_callback(void *arg, tcp_pcb *pcb, err_t err)
 		else {
 			xil_printf("Invalid selection, try again: ");
 		}
-	}
+	}*/
+
+	xil_printf("Incoming connection request\n\r");
+	tcp_recv(pcb, chat_recv_callback);
 	return ERR_OK;
 }
 
@@ -166,4 +174,9 @@ static err_t chat_recv_callback(void *arg, tcp_pcb *pcb, struct pbuf *p, err_t e
 {
 	// Stub
 	return ERR_OK;
+}
+
+static void chat_err_callback(void *arg, err_t err)
+{
+	xil_printf("ERROR: TCP server error: Code %d", *(int *)arg);
 }
