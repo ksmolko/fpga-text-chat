@@ -3,17 +3,24 @@
 #include "xparameters.h"
 #include "xscugic.h"
 #include "xscutimer.h"
+#include "lwip/tcp.h"
 #include "lwip/dhcp.h"
+#include "netif/xadapter.h"
 #include "platform.h"
 
+
+void tcp_tmr(void);
 
 static XScuTimer tmr_instance;
 volatile int dhcp_timeout_counter = 24;
 
+// interrupt_handler() gets called every 250ms
 void interrupt_handler()
 {
 	static bool odd = true;
 	static int dhcp_timer = 0;
+
+	tcp_tmr();
 
 	odd = !odd;
 

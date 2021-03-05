@@ -1,5 +1,7 @@
 #include <stdbool.h>
 #include "xil_io.h"
+#include "xparameters.h"
+#include "xuartps.h"
 #include "lwip/init.h"
 #include "lwip/tcp.h"
 #include "lwip/dhcp.h"
@@ -18,11 +20,11 @@ static err_t echo_recv_callback(void *arg, tcp_pcb *pcb, struct pbuf *p, err_t e
 static err_t chat_accept_callback(void *arg, tcp_pcb *pcb, err_t err);
 static err_t chat_recv_callback(void *arg, tcp_pcb *pcb, struct pbuf *p, err_t err);
 static void chat_err_callback(void *arg, err_t err);
-void tcp_tmr(void);
 
 extern volatile int dhcp_timeout_counter;
 extern int state;
-static struct netif netif;
+struct netif netif;
+static tcp_pcb *chat_pcb = NULL;
 
 void ethernet_init()
 {
@@ -57,6 +59,12 @@ void serv_init(int serv_type, u16 port)
 	tcp_pcb *pcb;
 	pcb = tcp_new_ip_type(IPADDR_TYPE_V4);
 
+	if (chat_pcb != NULL) {
+		xil_printf("Chat server already open. Replacing...\n\r");
+		tcp_close(chat_pcb);
+		tcp_recv(chat_pcb, NULL);
+	}
+
 	if (!pcb) {
 		xil_printf("ERROR: In function %s: Out of memory for PCB\n\r", __FUNCTION__);
 	}
@@ -88,6 +96,7 @@ void serv_init(int serv_type, u16 port)
 	else if (serv_type == CHAT_SERV) {
 		xil_printf("Chat server started on port %d\n\r", port);
 		tcp_accept(pcb, chat_accept_callback);
+		chat_pcb = pcb;
 	}
 	else {
 		xil_printf("ERROR: In function %s: Invalid serv_type", __FUNCTION__);
@@ -97,14 +106,36 @@ void serv_init(int serv_type, u16 port)
 
 void serv_loop()
 {
-	tcp_tmr();
+	char c;
+
 	xemacif_input(&netif);
+
+	if (state == STATE_ACCEPT){
+		if (XUartPs_IsReceiveData(XPAR_PS7_UART_1_BASEADDR)){
+			c = XUartPs_ReadReg(XPAR_PS7_UART_1_BASEADDR, XUARTPS_FIFO_OFFSET);
+			xil_printf("%c\n\r", c);
+			if (c == 'y' || c == 'Y'){
+				state = STATE_CALL_SERV;
+				xil_printf("Chat has begun\n\n\r");
+				tcp_write(chat_pcb, (void *)&c, 1, TCP_WRITE_FLAG_COPY);
+				tcp_output(chat_pcb);
+			}
+			else if (c == 'n' || c == 'N'){
+				state = STATE_MENU;
+				xil_printf("Refusing connection. Returning to menu\n\r");
+				tcp_write(chat_pcb, (void *)&c, 1, TCP_WRITE_FLAG_COPY);
+				tcp_output(chat_pcb);
+			}
+			else {
+				xil_printf("Invalid selection, try again: ");
+			}
+		}
+	}
 }
 
 static err_t echo_accept_callback(void *arg, tcp_pcb *pcb, err_t err)
 {
 	LWIP_UNUSED_ARG(err);
-	xil_printf("Echo connection request\n\r");
 
 	tcp_recv(pcb, echo_recv_callback);
 
@@ -115,9 +146,7 @@ static err_t echo_recv_callback(void *arg, tcp_pcb *pcb, struct pbuf *p, err_t e
 {
 	LWIP_UNUSED_ARG(arg);
 
-	xil_printf("Echo respond\n\r");
-
-	if(!p) {
+	if (!p) {
 		tcp_close(pcb);
 		tcp_recv(pcb, NULL);
 		return ERR_OK;
@@ -142,37 +171,31 @@ static err_t chat_accept_callback(void *arg, tcp_pcb *pcb, err_t err)
 {
 	LWIP_UNUSED_ARG(err);
 
-	/*char c;
-	bool valid = false;
-
+	state = STATE_ACCEPT;
 	xil_printf("Incoming Connection Request. Accept? [y/n]: ");
-	c = inbyte();
-	xil_printf("\n\r");
-
-	while (!valid) {
-		if (c == 'y' || c == 'Y') {
-			tcp_recv(pcb, chat_recv_callback);
-			state = STATE_CALL;
-			valid = true;
-		}
-		else if (c == 'n' || c == 'N') {
-			tcp_close(pcb);
-			tcp_recv(pcb, NULL);
-			valid = true;
-		}
-		else {
-			xil_printf("Invalid selection, try again: ");
-		}
-	}*/
-
-	xil_printf("Incoming connection request\n\r");
 	tcp_recv(pcb, chat_recv_callback);
 	return ERR_OK;
 }
 
 static err_t chat_recv_callback(void *arg, tcp_pcb *pcb, struct pbuf *p, err_t err)
 {
+	LWIP_UNUSED_ARG(arg);
+
+	if (!p) {
+		tcp_close(pcb);
+		tcp_recv(pcb, NULL);
+		return ERR_OK;
+	}
+
+	if (state == STATE_MENU){
+		tcp_close(pcb);
+		tcp_recv(pcb, NULL);
+		return ERR_OK;
+	}
+
 	// Stub
+
+	pbuf_free(p);
 	return ERR_OK;
 }
 

@@ -26,22 +26,30 @@ void init()
 
 void tick()
 {
+	vga_loop();
+
 	if (state == STATE_MENU) {
-		vga_loop();
 		shell_loop();
 		serv_loop();
 	}
-	else if (state == STATE_CALL) {
-		vga_loop();
+	else if (state == STATE_REQUEST) {
 		client_loop();
+	}
+	else if (state == STATE_ACCEPT) {
 		serv_loop();
+	}
+	else if (state == STATE_CALL_SERV) {
+		serv_loop();
+	}
+	else if (state == STATE_CALL_CLIENT) {
+		client_loop();
 	}
 }
 
 int main()
 {
 	init();
-	while(1) {
+	while(1){
 		tick();
 	}
 	return 0;
