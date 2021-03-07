@@ -1,12 +1,11 @@
 #include "xil_io.h"
+#include "xparameters.h"
+#include "xuartps.h"
 #include "netif/xadapter.h"
 #include "state.h"
+#include "chat.h"
 #include "client.h"
 
-#define LOCAL_CHAT_PORT 25567
-
-
-typedef struct tcp_pcb tcp_pcb;
 
 static err_t chat_connect_callback(void *arg, tcp_pcb *pcb, err_t err);
 static err_t chat_recv_callback(void *arg, tcp_pcb *pcb, struct pbuf *p, err_t err);
@@ -14,32 +13,34 @@ static void chat_err_callback(void *arg, err_t err);
 
 extern int state;
 extern struct netif netif;
+static tcp_pcb *client_pcb;
 
-void client_connect(const ip_addr_t *ip, u16 port)
+void client_init()
 {
 	int status;
-	tcp_pcb *pcb;
-	pcb = tcp_new_ip_type(IPADDR_TYPE_V4);
+	client_pcb = tcp_new_ip_type(IPADDR_TYPE_V4);
 
-	if (!pcb) {
+	if (!client_pcb) {
 		xil_printf("ERROR: In function %s: Out of memory for PCB\n\r", __FUNCTION__);
 		return;
 	}
 
-	status = tcp_bind(pcb, IP_ADDR_ANY, port);
+	status = tcp_bind(client_pcb, IP_ADDR_ANY, LOCAL_CHAT_PORT);
 	if (status != ERR_OK) {
-		xil_printf("ERROR: In function %s: Unable to bind to port %d\n\r", __FUNCTION__, port);
+		xil_printf("ERROR: In function %s: Unable to bind to port %d\n\r", __FUNCTION__, LOCAL_CHAT_PORT);
 		return;
 	}
-	else {
-		xil_printf("Client bind Successful on port %d\n\r", port);
-	}
+}
+
+void client_connect(const ip_addr_t *ip, u16 port)
+{
+	int status;
 
 	xil_printf("Remote IP: %d.%d.%d.%d\n\r", ip4_addr1(ip), ip4_addr2(ip), ip4_addr3(ip), ip4_addr4(ip));
 	xil_printf("Remote Port: %d\n\r", port);
 
-	tcp_err(pcb, chat_err_callback);
-	status = tcp_connect(pcb, ip, port, chat_connect_callback);
+	tcp_err(client_pcb, chat_err_callback);
+	status = tcp_connect(client_pcb, ip, port, chat_connect_callback);
 
 	if (status != ERR_OK) {
 		xil_printf("Error: Code %d\n\r", status);
@@ -53,22 +54,28 @@ void client_connect(const ip_addr_t *ip, u16 port)
 void client_loop()
 {
 	xemacif_input(&netif);
+
+	if (state == STATE_CALL_CLIENT) {
+		chat_loop(client_pcb);
+	}
 }
 
 static err_t chat_connect_callback(void *arg, tcp_pcb *pcb, err_t err)
 {
 	tcp_recv(pcb, chat_recv_callback);
-	xil_printf("Connection request received\n\r");
 	return ERR_OK;
 }
 
-static err_t chat_recv_callback(void *arg, tcp_pcb *pcb, struct pbuf *p, err_t err)
+static err_t chat_recv_callback(void *arg, tcp_pcb *pcb, pbuf *p, err_t err)
 {
 	LWIP_UNUSED_ARG(arg);
+
+	int status;
 
 	if (!p) {
 		tcp_close(pcb);
 		tcp_recv(pcb, NULL);
+		pbuf_free(p);
 		return ERR_OK;
 	}
 
@@ -99,12 +106,18 @@ static err_t chat_recv_callback(void *arg, tcp_pcb *pcb, struct pbuf *p, err_t e
 			}
 		}
 	}
+	else if(state == STATE_CALL_CLIENT) {
+		status = chat_rcv(pcb, p, err);
+	}
 
 	pbuf_free(p);
-	return ERR_OK;
+	return status;
 }
 
 static void chat_err_callback(void *arg, err_t err)
 {
-	xil_printf("ERROR: TCP client error: Code %d\n\r", err);
+	tcp_close(client_pcb);
+	tcp_recv(client_pcb, NULL);
+	xil_printf("ERROR: TCP client error: Code %d\n\rReturning to menu\n\r", err);
+	state = STATE_MENU;
 }

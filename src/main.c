@@ -6,6 +6,7 @@
 #include "shell.h"
 #include "client.h"
 #include "state.h"
+#include "chat.h"
 
 
 int state = STATE_MENU;
@@ -22,6 +23,7 @@ void init()
 	shell_init();
 	ethernet_init();
 	serv_init(ECHO_SERV, ECHO_PORT);
+	client_init();
 }
 
 void tick()
@@ -32,17 +34,11 @@ void tick()
 		shell_loop();
 		serv_loop();
 	}
-	else if (state == STATE_REQUEST) {
+	else if (state == STATE_REQUEST || state == STATE_CALL_CLIENT) {
 		client_loop();
 	}
-	else if (state == STATE_ACCEPT) {
+	else if (state == STATE_ACCEPT || state == STATE_CALL_SERVER) {
 		serv_loop();
-	}
-	else if (state == STATE_CALL_SERV) {
-		serv_loop();
-	}
-	else if (state == STATE_CALL_CLIENT) {
-		client_loop();
 	}
 }
 

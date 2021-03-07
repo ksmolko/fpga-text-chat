@@ -10,6 +10,7 @@
 #include "platform.h"
 #include "serv.h"
 #include "state.h"
+#include "chat.h"
 
 #define BUF_SIZE 1024
 
@@ -24,8 +25,9 @@ static void chat_err_callback(void *arg, err_t err);
 extern volatile int dhcp_timeout_counter;
 extern int state;
 struct netif netif;
-static tcp_pcb *chat_pcb = NULL;
+static tcp_pcb *serv_pcb;
 
+// Can probably find a more fitting home for this function
 void ethernet_init()
 {
 	ip_addr_t ipaddr, netmask, gw;
@@ -59,10 +61,10 @@ void serv_init(int serv_type, u16 port)
 	tcp_pcb *pcb;
 	pcb = tcp_new_ip_type(IPADDR_TYPE_V4);
 
-	if (chat_pcb != NULL) {
+	if (serv_pcb != NULL) {
 		xil_printf("Chat server already open. Replacing...\n\r");
-		tcp_close(chat_pcb);
-		tcp_recv(chat_pcb, NULL);
+		tcp_close(serv_pcb);
+		tcp_recv(serv_pcb, NULL);
 	}
 
 	if (!pcb) {
@@ -72,14 +74,6 @@ void serv_init(int serv_type, u16 port)
 	status = tcp_bind(pcb, IP_ADDR_ANY, port);
 	if (status != ERR_OK) {
 		xil_printf("ERROR: In function %s: Unable to bind to port %d\n\r", __FUNCTION__, port);
-	}
-	else {
-		if (serv_type == ECHO_SERV) {
-			xil_printf("Echo server bind successful on port %d\n\r", port);
-		}
-		else if (serv_type == CHAT_SERV) {
-			xil_printf("Chat server bind successful on port %d\n\r", port);
-		}
 	}
 
 	pcb = tcp_listen(pcb);
@@ -96,7 +90,6 @@ void serv_init(int serv_type, u16 port)
 	else if (serv_type == CHAT_SERV) {
 		xil_printf("Chat server started on port %d\n\r", port);
 		tcp_accept(pcb, chat_accept_callback);
-		chat_pcb = pcb;
 	}
 	else {
 		xil_printf("ERROR: In function %s: Invalid serv_type", __FUNCTION__);
@@ -107,30 +100,43 @@ void serv_init(int serv_type, u16 port)
 void serv_loop()
 {
 	char c;
+	err_t err;
 
 	xemacif_input(&netif);
 
-	if (state == STATE_ACCEPT){
-		if (XUartPs_IsReceiveData(XPAR_PS7_UART_1_BASEADDR)){
+	if (state == STATE_CALL_SERVER) {
+		chat_loop(serv_pcb);
+	}
+	else if (state == STATE_ACCEPT) {
+		if (XUartPs_IsReceiveData(XPAR_PS7_UART_1_BASEADDR)) {
 			c = XUartPs_ReadReg(XPAR_PS7_UART_1_BASEADDR, XUARTPS_FIFO_OFFSET);
 			xil_printf("%c\n\r", c);
 			if (c == 'y' || c == 'Y'){
-				state = STATE_CALL_SERV;
+				state = STATE_CALL_SERVER;
 				xil_printf("Chat has begun\n\n\r");
-				tcp_write(chat_pcb, (void *)&c, 1, TCP_WRITE_FLAG_COPY);
-				tcp_output(chat_pcb);
+				err = tcp_write(serv_pcb, (void *)&c, 1, TCP_WRITE_FLAG_COPY);
+				if (err != ERR_OK) {
+					xil_printf("ERROR: tcp_write() error: Code %d\n\r", err);
+				}
+				err = tcp_output(serv_pcb);
+				if (err != ERR_OK) {
+					xil_printf("ERROR: tcp_output() error: Code %d\n\r", err);
+				}
 			}
-			else if (c == 'n' || c == 'N'){
+			else if (c == 'n' || c == 'N') {
 				state = STATE_MENU;
 				xil_printf("Refusing connection. Returning to menu\n\r");
-				tcp_write(chat_pcb, (void *)&c, 1, TCP_WRITE_FLAG_COPY);
-				tcp_output(chat_pcb);
+				tcp_write(serv_pcb, (void *)&c, 1, TCP_WRITE_FLAG_COPY);
+				tcp_output(serv_pcb);
+				tcp_close(serv_pcb);
+				tcp_recv(serv_pcb, NULL);
 			}
 			else {
 				xil_printf("Invalid selection, try again: ");
 			}
 		}
 	}
+
 }
 
 static err_t echo_accept_callback(void *arg, tcp_pcb *pcb, err_t err)
@@ -142,7 +148,7 @@ static err_t echo_accept_callback(void *arg, tcp_pcb *pcb, err_t err)
 	return ERR_OK;
 }
 
-static err_t echo_recv_callback(void *arg, tcp_pcb *pcb, struct pbuf *p, err_t err)
+static err_t echo_recv_callback(void *arg, tcp_pcb *pcb, pbuf *p, err_t err)
 {
 	LWIP_UNUSED_ARG(arg);
 
@@ -171,15 +177,27 @@ static err_t chat_accept_callback(void *arg, tcp_pcb *pcb, err_t err)
 {
 	LWIP_UNUSED_ARG(err);
 
-	state = STATE_ACCEPT;
+	serv_pcb = pcb;
+
 	xil_printf("Incoming Connection Request. Accept? [y/n]: ");
 	tcp_recv(pcb, chat_recv_callback);
+
+	if (err != ERR_OK) {
+		xil_printf("ERROR: Cannot accept connection: Code %d\n\r", err);
+		return err;
+	}
+	else {
+		state = STATE_ACCEPT;
+	}
+
 	return ERR_OK;
 }
 
-static err_t chat_recv_callback(void *arg, tcp_pcb *pcb, struct pbuf *p, err_t err)
+static err_t chat_recv_callback(void *arg, tcp_pcb *pcb, pbuf *p, err_t err)
 {
 	LWIP_UNUSED_ARG(arg);
+
+	int status;
 
 	if (!p) {
 		tcp_close(pcb);
@@ -193,13 +211,18 @@ static err_t chat_recv_callback(void *arg, tcp_pcb *pcb, struct pbuf *p, err_t e
 		return ERR_OK;
 	}
 
-	// Stub
+	if (state == STATE_CALL_SERVER) {
+		status = chat_rcv(pcb, p, err);
+	}
 
 	pbuf_free(p);
-	return ERR_OK;
+	return status;
 }
 
 static void chat_err_callback(void *arg, err_t err)
 {
-	xil_printf("ERROR: TCP server error: Code %d", *(int *)arg);
+	tcp_close(serv_pcb);
+	tcp_recv(serv_pcb, NULL);
+	xil_printf("ERROR: TCP server error: Code %d\n\rReturning to menu\n\r", *(int *)arg);
+	state = STATE_MENU;
 }
