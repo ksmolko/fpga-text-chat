@@ -30,9 +30,15 @@ void menu_loop()
         inp = XUartPs_ReadReg(UART_BASEADDR, XUARTPS_FIFO_OFFSET);
 
         switch(inp) {
+        case 'i':
+        	vga_switch_to_IP();
+        	break;
+        case 'o':
+        	vga_switch_to_KB();
+        	break;
         case 'p':
             xil_printf("Changing screen\n\r");
-            vga_change();
+            vga_switch_to_CHAT();
             break;
         case 'w':
         	xil_printf("Pressing w\n\r");
