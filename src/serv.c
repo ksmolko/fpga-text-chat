@@ -10,6 +10,7 @@
 #include "platform.h"
 #include "serv.h"
 #include "state.h"
+#include "vga.h"
 #include "chat.h"
 
 #define BUF_SIZE 1024
@@ -26,6 +27,8 @@ extern volatile int dhcp_timeout_counter;
 extern int state;
 struct netif netif;
 static tcp_pcb *serv_pcb;
+static int status_x_offset = 0;
+static int status_y_offset = 0;
 
 // Can probably find a more fitting home for this function
 void ethernet_init()
@@ -100,6 +103,7 @@ void serv_init(int serv_type, u16 port)
 void serv_loop()
 {
 	char c;
+	char port_str[6];
 	err_t err;
 
 	xemacif_input(&netif);
@@ -114,6 +118,11 @@ void serv_loop()
 			if (c == 'y' || c == 'Y'){
 				state = STATE_CALL_SERVER;
 				xil_printf("Chat has begun\n\n\r");
+				vga_switch_to_CHAT();
+				vga_print_string(status_x_offset, status_y_offset, ipaddr_ntoa((ip_addr_t *)&(serv_pcb->remote_ip)));
+				status_y_offset += ALPHABET_CHAR_LENGTH;
+				sprintf(port_str, "%d", serv_pcb->remote_port);
+				vga_print_string(status_x_offset, status_y_offset, port_str);
 				err = tcp_write(serv_pcb, (void *)&c, 1, TCP_WRITE_FLAG_COPY);
 				if (err != ERR_OK) {
 					xil_printf("ERROR: tcp_write() error: Code %d\n\r", err);
@@ -126,6 +135,7 @@ void serv_loop()
 			else if (c == 'n' || c == 'N') {
 				state = STATE_MENU;
 				xil_printf("Refusing connection. Returning to menu\n\r");
+				vga_switch_to_IP();
 				tcp_write(serv_pcb, (void *)&c, 1, TCP_WRITE_FLAG_COPY);
 				tcp_output(serv_pcb);
 				tcp_close(serv_pcb);
@@ -180,6 +190,9 @@ static err_t chat_accept_callback(void *arg, tcp_pcb *pcb, err_t err)
 	serv_pcb = pcb;
 
 	xil_printf("Incoming Connection Request. Accept? [y/n]: ");
+	vga_print_string(HORIZONTAL_PIXEL_MAX/4
+			, VERTICAL_PIXEL_MAX/2
+			, "Incoming Connection Request. Accept? [y/n]");
 	tcp_recv(pcb, chat_recv_callback);
 
 	if (err != ERR_OK) {

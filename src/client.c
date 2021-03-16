@@ -4,6 +4,7 @@
 #include "netif/xadapter.h"
 #include "state.h"
 #include "chat.h"
+#include "vga.h"
 #include "client.h"
 
 
@@ -14,6 +15,8 @@ static void chat_err_callback(void *arg, err_t err);
 extern int state;
 extern struct netif netif;
 static tcp_pcb *client_pcb;
+static int status_x_offset = 0;
+static int status_y_offset = 0;
 
 void client_init()
 {
@@ -48,6 +51,9 @@ void client_connect(const ip_addr_t *ip, u16 port)
 	else {
 		state = STATE_REQUEST;
 		xil_printf("Connection request sent...\n\r");
+		vga_print_string(HORIZONTAL_PIXEL_MAX/2 - HORIZONTAL_PIXEL_MAX/12
+			, VERTICAL_PIXEL_MAX/2
+			, "Connection request Sent...");
 	}
 }
 
@@ -71,6 +77,7 @@ static err_t chat_recv_callback(void *arg, tcp_pcb *pcb, pbuf *p, err_t err)
 	LWIP_UNUSED_ARG(arg);
 
 	int status;
+	char port_str[6];
 
 	if (!p) {
 		tcp_close(pcb);
@@ -86,6 +93,11 @@ static err_t chat_recv_callback(void *arg, tcp_pcb *pcb, pbuf *p, err_t err)
 			if (tcp_sndbuf(pcb) > p->len) {
 				if (pbuf_memcmp(p, 0, "y", 1) == 0 || pbuf_memcmp(p, 0, "Y", 1) == 0) {
 					state = STATE_CALL_CLIENT;
+					vga_switch_to_CHAT();
+					vga_print_string(status_x_offset, status_y_offset, ipaddr_ntoa((ip_addr_t *)&(pcb->remote_ip)));
+					status_y_offset += ALPHABET_CHAR_LENGTH;
+					sprintf(port_str, "%d", pcb->remote_port);
+					vga_print_string(status_x_offset, status_y_offset, port_str);
 					xil_printf("Connection request accepted. Call has begun\n\n\r");
 				}
 				else if(pbuf_memcmp(p, 0, "n", 1) == 0 || pbuf_memcmp(p, 0, "N", 1) == 0) {

@@ -1,3 +1,4 @@
+#include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
 #include "xuartps.h"
@@ -6,6 +7,7 @@
 #include "vga.h"
 #include "shell.h"
 #include "serv.h"
+#include "state.h"
 #include "client.h"
 
 #define CMD_MAX_LEN 256
@@ -18,6 +20,12 @@
 #define LISTEN_USAGE "Usage: listen [port]\n\r"
 #define UART_BASEADDR XPAR_PS7_UART_1_BASEADDR
 
+#define PROMPT_IP "ENTER THE REMOTE IP AND PORT: "
+
+
+extern int state;
+
+static void shell_loop_connect();
 
 void shell_init()
 {
@@ -32,7 +40,7 @@ void shell_init()
 void shell_loop()
 {
 	static char buf[CMD_MAX_LEN] = "";
-	int status;
+	int status = STATUS_SUCCESS;
 	u16 port;
 	char c;
 	char *token;
@@ -41,9 +49,12 @@ void shell_loop()
 	IP4_ADDR(&ip, 0, 0, 0, 0);
 
 	// Wait for input from UART via the terminal
-	if (XUartPs_IsReceiveData(UART_BASEADDR)){
+	if (state == STATE_MENU_CONNECT) {
+		shell_loop_connect();
+	}
+	else if (XUartPs_IsReceiveData(UART_BASEADDR)) {
 		c = XUartPs_ReadReg(UART_BASEADDR, XUARTPS_FIFO_OFFSET);
-		if (c == '\r' || c == '\n'){
+		if (c == '\r' || c == '\n') {
 			xil_printf("\n\r");
 			token = strtok_r(buf, " ", &context);
 
@@ -58,7 +69,8 @@ void shell_loop()
 				// Parse connect command
 				if (token == NULL) {
 					status = STATUS_FAIL;
-					xil_printf(IP_USAGE);
+					state = STATE_MENU_CONNECT;
+					vga_switch_to_connect();
 				}
 				else {
 					status = ipaddr_aton(token, &ip);
@@ -99,8 +111,63 @@ void shell_loop()
 			buf[0] = '\0';
 		}
 		else {
-			if(strlen(buf) < CMD_MAX_LEN - 1){
+			if(strlen(buf) < CMD_MAX_LEN - 1) {
 				xil_printf("%c", c);
+				strncat(buf, &c, 1);
+			}
+		}
+	}
+}
+
+static void shell_loop_connect()
+{
+	static bool prompted = false;
+	static int vga_x_offset = 0;
+	static int vga_y_offset = 0;
+	int status = STATUS_SUCCESS;
+	char c;
+	char *token;
+	char *context;
+	char buf[CMD_MAX_LEN] = "";
+	ip_addr_t ip;
+	u16 port;
+
+
+	if (!prompted) {
+		xil_printf(PROMPT_IP);
+		vga_print_string(vga_x_offset, vga_y_offset, PROMPT_IP);
+		vga_y_offset += ALPHABET_CHAR_LENGTH;
+		prompted = true;
+	}
+
+	if (XUartPs_IsReceiveData(UART_BASEADDR)) {
+		c = XUartPs_ReadReg(UART_BASEADDR, XUARTPS_FIFO_OFFSET);
+		if (c == '\r' || c == '\n') {
+			xil_printf("\n\r");
+			token = strtok_r(buf, ":", &context);
+			vga_x_offset = 0;
+			vga_y_offset += ALPHABET_CHAR_LENGTH;
+			status = ipaddr_aton(token, &ip);
+			if (!status) {
+				xil_printf("Invalid IP: Try again\n\r");
+			}
+			else {
+				token = strtok_r(NULL, ":", &context);
+				port = atoi(token);
+				if (port == 0) {
+					status = STATUS_FAIL;
+				}
+				if (status == STATUS_SUCCESS) {
+					client_connect(&ip, port);
+				}
+			}
+			buf[0] = '\0';
+		}
+		else {
+			if(strlen(buf) < CMD_MAX_LEN - 1) {
+				xil_printf("%c", c);
+				vga_print_character(vga_x_offset, vga_y_offset, c);
+				vga_x_offset += ALPHABET_CHAR_LENGTH;
 				strncat(buf, &c, 1);
 			}
 		}

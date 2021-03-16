@@ -6,8 +6,9 @@ proc getScriptDirectory {} {
 
 set SCRIPT_DIR [getScriptDirectory]
 set ROOT_DIR $SCRIPT_DIR/..
-set KB_NORMAL_SPRITES_DIR $ROOT_DIR/sprites/normal_kb_sprites
-set KB_SELECTED_SPRITES_DIR $ROOT_DIR/sprites/selected_kb_sprites
+set SPRITE_DIR $ROOT_DIR/sprites
+set KB_NORMAL_SPRITES_DIR $SPRITE_DIR/normal_kb_sprites
+set KB_SELECTED_SPRITES_DIR $SPRITE_DIR/selected_kb_sprites
 
 dow -data $KB_NORMAL_SPRITES_DIR/Key1.data 0x5000000
 dow -data $KB_NORMAL_SPRITES_DIR/Key2.data 0x5009c40
@@ -108,3 +109,5 @@ dow -data $KB_SELECTED_SPRITES_DIR/QuestionMark.data 0x540b280
 dow -data $KB_SELECTED_SPRITES_DIR/ExclamationMark.data 0x5414ec0
 dow -data $KB_SELECTED_SPRITES_DIR/Return.data 0x541eb00
 dow -data $KB_SELECTED_SPRITES_DIR/Space.data 0x5432380
+
+dow -data $SPRITE_DIR/alphabet.data 0x54630c0

@@ -30,7 +30,7 @@ void tick()
 {
 	vga_loop();
 
-	if (state == STATE_MENU) {
+	if (state == STATE_MENU || state == STATE_MENU_CONNECT || state == STATE_MENU_LISTEN) {
 		shell_loop();
 		serv_loop();
 	}

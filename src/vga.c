@@ -5,9 +5,7 @@
 #define IMG_BUF_PTR 0x00900000
 #define NORMAL_COLOURS 0
 #define ALTERNATE_COLOURS 1
-#define HORIZONTAL_PIXEL_MAX 1920
 #define HORIZONTAL_PIXEL_MIDDLE HORIZONTAL_PIXEL_MAX/2
-#define VERTICAL_PIXEL_MAX 1080
 #define VERTICAL_PIXEL_MIDDLE VERTICAL_PIXEL_MAX/2
 #define NUM_BYTES_BUFFER HORIZONTAL_PIXEL_MAX*VERTICAL_PIXEL_MAX*4
 
@@ -25,12 +23,172 @@
 #define KEYBOARD_NUM_OF_KEY_X 12
 #define KEYBOARD_NUM_OF_KEY_Y 4 // Not counting space key
 
-#define RGB_RED 0xFF0000FF
+#define ALPHABET_SPRITE_LENGTH 512
+#define ALPHABET_SPRITE_ADDR 0x54630C0
+#define ALPHABET_SPACE_OFFSET 0
+#define ALPHABET_DOT_OFFSET 0x116F0
+#define ALPHABET_SLASH_OFFSET 0x11770
+#define ALPHABET_0_OFFSET 0x23000
+#define ALPHABET_1_OFFSET 0x23068
+#define ALPHABET_2_OFFSET 0x230E8
+#define ALPHABET_3_OFFSET 0x23168
+#define ALPHABET_4_OFFSET 0x231E8
+#define ALPHABET_5_OFFSET 0x23268
+#define ALPHABET_6_OFFSET 0x232E8
+#define ALPHABET_7_OFFSET 0x23368
+#define ALPHABET_8_OFFSET 0x233E8
+#define ALPHABET_9_OFFSET 0x23468
+#define ALPHABET_COLON_OFFSET 0x234E8
+#define ALPHABET_A_OFFSET 0x33068
+#define ALPHABET_B_OFFSET 0x330E8
+#define ALPHABET_C_OFFSET 0x33168
+#define ALPHABET_D_OFFSET 0x331E8
+#define ALPHABET_E_OFFSET 0x33268
+#define ALPHABET_F_OFFSET 0x332E8
+#define ALPHABET_G_OFFSET 0x33368
+#define ALPHABET_H_OFFSET 0x333E8
+#define ALPHABET_I_OFFSET 0x33468
+#define ALPHABET_J_OFFSET 0x334E8
+#define ALPHABET_K_OFFSET 0x33568
+#define ALPHABET_L_OFFSET 0x335E8
+#define ALPHABET_M_OFFSET 0x33668
+#define ALPHABET_N_OFFSET 0x336E8
+#define ALPHABET_O_OFFSET 0x33768
+#define ALPHABET_P_OFFSET 0x43000
+#define ALPHABET_Q_OFFSET 0x43068
+#define ALPHABET_R_OFFSET 0x430E8
+#define ALPHABET_S_OFFSET 0x43168
+#define ALPHABET_T_OFFSET 0x431E8
+#define ALPHABET_U_OFFSET 0x43268
+#define ALPHABET_V_OFFSET 0x432E8
+#define ALPHABET_W_OFFSET 0x43368
+#define ALPHABET_X_OFFSET 0x433E8
+#define ALPHABET_Y_OFFSET 0x43468
+#define ALPHABET_Z_OFFSET 0x434E8
+#define ALPHABET_a_OFFSET 0x52068
+#define ALPHABET_b_OFFSET 0x520E8
+#define ALPHABET_c_OFFSET 0x52168
+#define ALPHABET_d_OFFSET 0x521E8
+#define ALPHABET_e_OFFSET 0x52268
+#define ALPHABET_f_OFFSET 0x522E8
+#define ALPHABET_g_OFFSET 0x52368
+#define ALPHABET_h_OFFSET 0x523E8
+#define ALPHABET_i_OFFSET 0x52468
+#define ALPHABET_j_OFFSET 0x524E8
+#define ALPHABET_k_OFFSET 0x52568
+#define ALPHABET_l_OFFSET 0x525E8
+#define ALPHABET_m_OFFSET 0x52668
+#define ALPHABET_n_OFFSET 0x526E8
+#define ALPHABET_o_OFFSET 0x52768
+#define ALPHABET_p_OFFSET 0x61800
+#define ALPHABET_q_OFFSET 0x61868
+#define ALPHABET_r_OFFSET 0x618E8
+#define ALPHABET_s_OFFSET 0x61968
+#define ALPHABET_t_OFFSET 0x619E8
+#define ALPHABET_u_OFFSET 0x61A68
+#define ALPHABET_v_OFFSET 0x61AE8
+#define ALPHABET_w_OFFSET 0x61B68
+#define ALPHABET_x_OFFSET 0x61BE8
+#define ALPHABET_y_OFFSET 0x61C68
+#define ALPHABET_z_OFFSET 0x61CE8
+#define ALPHABET_QUESTION_OFFSET 0x2376C
+#define ALPHABET_OPEN_BRACKET_OFFSET 0x41578
+#define ALPHABET_CLOSE_BRACKET_OFFSET 0x41678
+// TODO: Add the rest of the special characters
 
-#define IP_SCREEN 0
-#define KB_SCREEN 1
-#define CHAT_SCREEN 2
+#define BUTTON_Y_OFFSET (HORIZONTAL_PIXEL_MAX*VERTICAL_PIXEL_MAX*21/24)
+#define BUTTON_CONNECT_OFFSET (BUTTON_Y_OFFSET + HORIZONTAL_PIXEL_MAX/4 - HORIZONTAL_PIXEL_MAX/18)
+#define BUTTON_LISTEN_OFFSET (BUTTON_Y_OFFSET + HORIZONTAL_PIXEL_MAX*3/4 - HORIZONTAL_PIXEL_MAX/18)
+#define BUTTON_HISTORY_OFFSET (BUTTON_Y_OFFSET + HORIZONTAL_PIXEL_MAX/16)
+#define BUTTON_KEYBOARD_OFFSET (BUTTON_Y_OFFSET + HORIZONTAL_PIXEL_MAX/4 + HORIZONTAL_PIXEL_MAX/16)
+#define BUTTON_RECORDING_OFFSET (BUTTON_Y_OFFSET + HORIZONTAL_PIXEL_MAX/2 + HORIZONTAL_PIXEL_MAX/16)
+#define BUTTON_CLOSE_OFFSET (BUTTON_Y_OFFSET + HORIZONTAL_PIXEL_MAX*7/8 - HORIZONTAL_PIXEL_MAX/16)
 
+#define CHAT_BUF_OFFSET HORIZONTAL_PIXEL_MAX*(VERTICAL_PIXEL_MAX*4/5 - ALPHABET_CHAR_LENGTH)*4
+#define CHAT_BUF_SIZE ALPHABET_CHAR_LENGTH*HORIZONTAL_PIXEL_MAX
+
+#define SCREEN_IP 0
+#define SCREEN_KB 1
+#define SCREEN_CHAT 2
+#define SCREEN_CONNECT 3
+#define SCREEN_LISTEN 4
+
+#define print_SPACE_character(ptr) print_character(ptr, (int *)(ALPHABET_SPRITE_ADDR + ALPHABET_SPACE_OFFSET))
+#define print_DOT_character(ptr) print_character(ptr, (int *)(ALPHABET_SPRITE_ADDR + ALPHABET_DOT_OFFSET))
+#define print_slash_character(ptr) print_character(ptr, (int *)(ALPHABET_SPRITE_ADDR + ALPHABET_SLASH_OFFSET))
+#define print_0_character(ptr) print_character(ptr, (int *)(ALPHABET_SPRITE_ADDR + ALPHABET_0_OFFSET))
+#define print_1_character(ptr) print_character(ptr, (int *)(ALPHABET_SPRITE_ADDR + ALPHABET_1_OFFSET))
+#define print_2_character(ptr) print_character(ptr, (int *)(ALPHABET_SPRITE_ADDR + ALPHABET_2_OFFSET))
+#define print_3_character(ptr) print_character(ptr, (int *)(ALPHABET_SPRITE_ADDR + ALPHABET_3_OFFSET))
+#define print_4_character(ptr) print_character(ptr, (int *)(ALPHABET_SPRITE_ADDR + ALPHABET_4_OFFSET))
+#define print_5_character(ptr) print_character(ptr, (int *)(ALPHABET_SPRITE_ADDR + ALPHABET_5_OFFSET))
+#define print_6_character(ptr) print_character(ptr, (int *)(ALPHABET_SPRITE_ADDR + ALPHABET_6_OFFSET))
+#define print_7_character(ptr) print_character(ptr, (int *)(ALPHABET_SPRITE_ADDR + ALPHABET_7_OFFSET))
+#define print_8_character(ptr) print_character(ptr, (int *)(ALPHABET_SPRITE_ADDR + ALPHABET_8_OFFSET))
+#define print_9_character(ptr) print_character(ptr, (int *)(ALPHABET_SPRITE_ADDR + ALPHABET_9_OFFSET))
+#define print_COLON_character(ptr) print_character(ptr, (int *)(ALPHABET_SPRITE_ADDR + ALPHABET_COLON_OFFSET))
+#define print_A_character(ptr) print_character(ptr, (int *)(ALPHABET_SPRITE_ADDR + ALPHABET_A_OFFSET))
+#define print_B_character(ptr) print_character(ptr, (int *)(ALPHABET_SPRITE_ADDR + ALPHABET_B_OFFSET))
+#define print_C_character(ptr) print_character(ptr, (int *)(ALPHABET_SPRITE_ADDR + ALPHABET_C_OFFSET))
+#define print_D_character(ptr) print_character(ptr, (int *)(ALPHABET_SPRITE_ADDR + ALPHABET_D_OFFSET))
+#define print_E_character(ptr) print_character(ptr, (int *)(ALPHABET_SPRITE_ADDR + ALPHABET_E_OFFSET))
+#define print_F_character(ptr) print_character(ptr, (int *)(ALPHABET_SPRITE_ADDR + ALPHABET_F_OFFSET))
+#define print_G_character(ptr) print_character(ptr, (int *)(ALPHABET_SPRITE_ADDR + ALPHABET_G_OFFSET))
+#define print_H_character(ptr) print_character(ptr, (int *)(ALPHABET_SPRITE_ADDR + ALPHABET_H_OFFSET))
+#define print_I_character(ptr) print_character(ptr, (int *)(ALPHABET_SPRITE_ADDR + ALPHABET_I_OFFSET))
+#define print_J_character(ptr) print_character(ptr, (int *)(ALPHABET_SPRITE_ADDR + ALPHABET_J_OFFSET))
+#define print_K_character(ptr) print_character(ptr, (int *)(ALPHABET_SPRITE_ADDR + ALPHABET_K_OFFSET))
+#define print_L_character(ptr) print_character(ptr, (int *)(ALPHABET_SPRITE_ADDR + ALPHABET_L_OFFSET))
+#define print_M_character(ptr) print_character(ptr, (int *)(ALPHABET_SPRITE_ADDR + ALPHABET_M_OFFSET))
+#define print_N_character(ptr) print_character(ptr, (int *)(ALPHABET_SPRITE_ADDR + ALPHABET_N_OFFSET))
+#define print_O_character(ptr) print_character(ptr, (int *)(ALPHABET_SPRITE_ADDR + ALPHABET_O_OFFSET))
+#define print_P_character(ptr) print_character(ptr, (int *)(ALPHABET_SPRITE_ADDR + ALPHABET_P_OFFSET))
+#define print_Q_character(ptr) print_character(ptr, (int *)(ALPHABET_SPRITE_ADDR + ALPHABET_Q_OFFSET))
+#define print_R_character(ptr) print_character(ptr, (int *)(ALPHABET_SPRITE_ADDR + ALPHABET_R_OFFSET))
+#define print_S_character(ptr) print_character(ptr, (int *)(ALPHABET_SPRITE_ADDR + ALPHABET_S_OFFSET))
+#define print_T_character(ptr) print_character(ptr, (int *)(ALPHABET_SPRITE_ADDR + ALPHABET_T_OFFSET))
+#define print_U_character(ptr) print_character(ptr, (int *)(ALPHABET_SPRITE_ADDR + ALPHABET_U_OFFSET))
+#define print_V_character(ptr) print_character(ptr, (int *)(ALPHABET_SPRITE_ADDR + ALPHABET_V_OFFSET))
+#define print_W_character(ptr) print_character(ptr, (int *)(ALPHABET_SPRITE_ADDR + ALPHABET_W_OFFSET))
+#define print_X_character(ptr) print_character(ptr, (int *)(ALPHABET_SPRITE_ADDR + ALPHABET_X_OFFSET))
+#define print_Y_character(ptr) print_character(ptr, (int *)(ALPHABET_SPRITE_ADDR + ALPHABET_Y_OFFSET))
+#define print_Z_character(ptr) print_character(ptr, (int *)(ALPHABET_SPRITE_ADDR + ALPHABET_Z_OFFSET))
+#define print_a_character(ptr) print_character(ptr, (int *)(ALPHABET_SPRITE_ADDR + ALPHABET_a_OFFSET))
+#define print_b_character(ptr) print_character(ptr, (int *)(ALPHABET_SPRITE_ADDR + ALPHABET_b_OFFSET))
+#define print_c_character(ptr) print_character(ptr, (int *)(ALPHABET_SPRITE_ADDR + ALPHABET_c_OFFSET))
+#define print_d_character(ptr) print_character(ptr, (int *)(ALPHABET_SPRITE_ADDR + ALPHABET_d_OFFSET))
+#define print_e_character(ptr) print_character(ptr, (int *)(ALPHABET_SPRITE_ADDR + ALPHABET_e_OFFSET))
+#define print_f_character(ptr) print_character(ptr, (int *)(ALPHABET_SPRITE_ADDR + ALPHABET_f_OFFSET))
+#define print_g_character(ptr) print_character(ptr, (int *)(ALPHABET_SPRITE_ADDR + ALPHABET_g_OFFSET))
+#define print_h_character(ptr) print_character(ptr, (int *)(ALPHABET_SPRITE_ADDR + ALPHABET_h_OFFSET))
+#define print_i_character(ptr) print_character(ptr, (int *)(ALPHABET_SPRITE_ADDR + ALPHABET_i_OFFSET))
+#define print_j_character(ptr) print_character(ptr, (int *)(ALPHABET_SPRITE_ADDR + ALPHABET_j_OFFSET))
+#define print_k_character(ptr) print_character(ptr, (int *)(ALPHABET_SPRITE_ADDR + ALPHABET_k_OFFSET))
+#define print_l_character(ptr) print_character(ptr, (int *)(ALPHABET_SPRITE_ADDR + ALPHABET_l_OFFSET))
+#define print_m_character(ptr) print_character(ptr, (int *)(ALPHABET_SPRITE_ADDR + ALPHABET_m_OFFSET))
+#define print_n_character(ptr) print_character(ptr, (int *)(ALPHABET_SPRITE_ADDR + ALPHABET_n_OFFSET))
+#define print_o_character(ptr) print_character(ptr, (int *)(ALPHABET_SPRITE_ADDR + ALPHABET_o_OFFSET))
+#define print_p_character(ptr) print_character(ptr, (int *)(ALPHABET_SPRITE_ADDR + ALPHABET_p_OFFSET))
+#define print_q_character(ptr) print_character(ptr, (int *)(ALPHABET_SPRITE_ADDR + ALPHABET_q_OFFSET))
+#define print_r_character(ptr) print_character(ptr, (int *)(ALPHABET_SPRITE_ADDR + ALPHABET_r_OFFSET))
+#define print_s_character(ptr) print_character(ptr, (int *)(ALPHABET_SPRITE_ADDR + ALPHABET_s_OFFSET))
+#define print_t_character(ptr) print_character(ptr, (int *)(ALPHABET_SPRITE_ADDR + ALPHABET_t_OFFSET))
+#define print_u_character(ptr) print_character(ptr, (int *)(ALPHABET_SPRITE_ADDR + ALPHABET_u_OFFSET))
+#define print_v_character(ptr) print_character(ptr, (int *)(ALPHABET_SPRITE_ADDR + ALPHABET_v_OFFSET))
+#define print_w_character(ptr) print_character(ptr, (int *)(ALPHABET_SPRITE_ADDR + ALPHABET_w_OFFSET))
+#define print_x_character(ptr) print_character(ptr, (int *)(ALPHABET_SPRITE_ADDR + ALPHABET_x_OFFSET))
+#define print_y_character(ptr) print_character(ptr, (int *)(ALPHABET_SPRITE_ADDR + ALPHABET_y_OFFSET))
+#define print_z_character(ptr) print_character(ptr, (int *)(ALPHABET_SPRITE_ADDR + ALPHABET_z_OFFSET))
+#define print_question_character(ptr) print_character(ptr, (int *)(ALPHABET_SPRITE_ADDR + ALPHABET_QUESTION_OFFSET))
+#define print_open_bracket_character(ptr) print_character(ptr, (int *)(ALPHABET_SPRITE_ADDR + ALPHABET_OPEN_BRACKET_OFFSET))
+#define print_close_bracket_character(ptr) print_character(ptr, (int *)(ALPHABET_SPRITE_ADDR + ALPHABET_CLOSE_BRACKET_OFFSET))
+
+
+static int red = 0xFF0000FF;
+static int green = 0xFF00FF00;
+static int blue = 0xFFFF0000;
+static int yellow = 0xFF00FFFF;
+static int purple = 0xFFFF00FF;
 
 static int * image_pointer[5] = {(int *)0x018D2008, (int *)0x020BB00C, (int *)0x028A4010, (int *)0x0308D014, (int *)0x03876018};
 static int kb_key_center_x[12] = {305, 415, 525, 635, 745, 855, 965, 1075, 1185, 1295, 1405, 1615};
@@ -59,8 +217,9 @@ static int* kb_selected_sprite[49] = {(int*)0x5236680, (int*)0x52402c0, (int*)0x
 		(int*)0x53b3440, (int*)0x53bd080, (int*)0x53c6cc0, (int*)0x53d0900, (int*)0x53da540, (int*)0x53e4180, (int*)0x53eddc0, (int*)0x53f7a00, (int*)0x5401640, (int*)0x540b280, (int*)0x5414ec0, (int*)0x541eb00, \
 		(int*)0x5432380};
 
-static void update_screen();
-
+static void vga_update();
+static void print_character(int* image_pointer, int* sprite);
+static void print_string(int* image_pointer, char* str);
 static void set_kb_square_key(int* image_pointer, int* kb_normal_sprite, int center_x, int center_y);
 static void set_kb_rectangle_key(int* image_pointer, int* kb_normal_sprite, int center_x, int center_y);
 static void set_kb_space_key(int* image_pointer, int* kb_normal_sprite, int center_x, int center_y);
@@ -68,11 +227,11 @@ static void set_kb_space_key(int* image_pointer, int* kb_normal_sprite, int cent
 void setColours(int colour, int* image_pointer[5])
 {
 
-	int red = 0xFF0000FF;
-	int green = 0xFF00FF00;
-	int blue = 0xFFFF0000;
-	int yellow = 0xFF00FFFF;
-	int purple = 0xFFFF00FF;
+	red = 0xFF0000FF;
+	green = 0xFF00FF00;
+	blue = 0xFFFF0000;
+	yellow = 0xFF00FFFF;
+	purple = 0xFFFF00FF;
 
 	if(colour == 1){
 		red = 0xFFECFF00;
@@ -106,36 +265,6 @@ void setColours(int colour, int* image_pointer[5])
 			else {
 				// Chat history box
 				memcpy(image_pointer[2] + addr_offset, &yellow, 4);
-			}
-
-			// Button layer
-			int button1_xCenter = (HORIZONTAL_PIXEL_MAX/4 - 0)/2;
-			int button2_xCenter = ((HORIZONTAL_PIXEL_MAX*2/4 - HORIZONTAL_PIXEL_MAX/4)/2) + HORIZONTAL_PIXEL_MAX/4;
-			int button3_xCenter = ((HORIZONTAL_PIXEL_MAX*3/4 - HORIZONTAL_PIXEL_MAX*2/4)/2) + HORIZONTAL_PIXEL_MAX*2/4;
-			int button4_xCenter = ((HORIZONTAL_PIXEL_MAX - HORIZONTAL_PIXEL_MAX*3/4)/2) + HORIZONTAL_PIXEL_MAX*3/4;
-
-			int buttonLine_yCenter = ((VERTICAL_PIXEL_MAX - VERTICAL_PIXEL_MAX*4/5)/2) + VERTICAL_PIXEL_MAX*4/5;
-			int button_xLength = 200;
-			int button_yLength = 100;
-
-			// Button 1
-			if (x > (button1_xCenter-button_xLength/2) && x < (button1_xCenter+button_xLength/2) && y > (buttonLine_yCenter-button_yLength/2) && y < (buttonLine_yCenter+button_yLength/2)) {
-				memcpy(image_pointer[2] + addr_offset, &red, 4);
-			}
-
-			// Button 2
-			if (x > (button2_xCenter-button_xLength/2) && x < (button2_xCenter+button_xLength/2) && y > (buttonLine_yCenter-button_yLength/2) && y < (buttonLine_yCenter+button_yLength/2)) {
-				memcpy(image_pointer[2] + addr_offset, &red, 4);
-			}
-
-			// Button 3
-			if (x > (button3_xCenter-button_xLength/2) && x < (button3_xCenter+button_xLength/2) && y > (buttonLine_yCenter-button_yLength/2) && y < (buttonLine_yCenter+button_yLength/2)) {
-				memcpy(image_pointer[2] + addr_offset, &red, 4);
-			}
-
-			// Button 4
-			if (x > (button4_xCenter-button_xLength/2) && x < (button4_xCenter+button_xLength/2) && y > (buttonLine_yCenter-button_yLength/2) && y < (buttonLine_yCenter+button_yLength/2)) {
-				memcpy(image_pointer[2] + addr_offset, &red, 4);
 			}
 
 			// Onscreen keyboard and composing message text box
@@ -184,20 +313,6 @@ void setColours(int colour, int* image_pointer[5])
 			if (y > list_top_boundary + 3*list_elem_height && y < list_top_boundary + 4*list_elem_height) {
 				memcpy(image_pointer[0] + addr_offset, &yellow, 4);
 			}
-
-			// Option button layer
-			button1_xCenter = (HORIZONTAL_PIXEL_MAX/2 - 0)/2;
-			button2_xCenter = ((HORIZONTAL_PIXEL_MAX - HORIZONTAL_PIXEL_MAX/2)/2) + HORIZONTAL_PIXEL_MAX/2;
-
-			// Button 1
-			if (x > (button1_xCenter-button_xLength/2) && x < (button1_xCenter+button_xLength/2) && y > (buttonLine_yCenter-button_yLength/2) && y < (buttonLine_yCenter+button_yLength/2)) {
-				memcpy(image_pointer[0] + addr_offset, &red, 4);
-			}
-
-			// Button 2
-			if (x > (button2_xCenter-button_xLength/2) && x < (button2_xCenter+button_xLength/2) && y > (buttonLine_yCenter-button_yLength/2) && y < (buttonLine_yCenter+button_yLength/2)) {
-				memcpy(image_pointer[0] + addr_offset, &red, 4);
-			}
 		}
 	}
 
@@ -218,7 +333,242 @@ void setColours(int colour, int* image_pointer[5])
 		}
 	}
 
+	//print_character(image_pointer[0] + BUTTON_CONNECT_OFFSET, (int *)(ALPHABET_SPRITE_ADDR + ALPHABET_C_OFFSET));
+	print_string(image_pointer[0] + BUTTON_CONNECT_OFFSET, "CONNECT");
+	print_string(image_pointer[0] + BUTTON_LISTEN_OFFSET, "LISTEN");
+
+	print_string(image_pointer[2] + BUTTON_HISTORY_OFFSET, "HISTORY");
+	print_string(image_pointer[2] + BUTTON_KEYBOARD_OFFSET, "KEYBOARD");
+	print_string(image_pointer[2] + BUTTON_RECORDING_OFFSET, "RECORDING");
+	print_string(image_pointer[2] + BUTTON_CLOSE_OFFSET, "CLOSE");
+
 	set_kb_space_key(image_pointer[1], kb_selected_sprite[48], kb_space_center_x, kb_space_center_y);
+}
+
+static void print_character(int* image_pointer, int* sprite)
+{
+	for (int y = 0; y < ALPHABET_CHAR_LENGTH; ++y) {
+		for (int x = 0; x < ALPHABET_CHAR_LENGTH; ++x) {
+			int addr_offset = HORIZONTAL_PIXEL_MAX*y + x;
+			int offset = y*ALPHABET_SPRITE_LENGTH + x;
+			memcpy(image_pointer + addr_offset, sprite + offset, 4);
+		}
+	}
+}
+
+static void print_string(int* image_pointer, char* str)
+{
+	for (int i = 0; i < strlen(str); i++) {
+		switch(str[i]) {
+			case ' ':
+				print_SPACE_character(image_pointer + 32*i);
+				break;
+			case '.':
+				print_DOT_character(image_pointer + 32*i);
+				break;
+			case '/':
+				print_slash_character(image_pointer + 32*i);
+				break;
+			case '0':
+				print_0_character(image_pointer + 32*i);
+				break;
+			case '1':
+				print_1_character(image_pointer + 32*i);
+				break;
+			case '2':
+				print_2_character(image_pointer + 32*i);
+				break;
+			case '3':
+				print_3_character(image_pointer + 32*i);
+				break;
+			case '4':
+				print_4_character(image_pointer + 32*i);
+				break;
+			case '5':
+				print_5_character(image_pointer + 32*i);
+				break;
+			case '6':
+				print_6_character(image_pointer + 32*i);
+				break;
+			case '7':
+				print_7_character(image_pointer + 32*i);
+				break;
+			case '8':
+				print_8_character(image_pointer + 32*i);
+				break;
+			case '9':
+				print_9_character(image_pointer + 32*i);
+				break;
+			case ':':
+				print_COLON_character(image_pointer + 32*i);
+				break;
+			case 'A':
+				print_A_character(image_pointer + 32*i);
+				break;
+			case 'B':
+				print_B_character(image_pointer + 32*i);
+				break;
+			case 'C':
+				print_C_character(image_pointer + 32*i);
+				break;
+			case 'D':
+				print_D_character(image_pointer + 32*i);
+				break;
+			case 'E':
+				print_E_character(image_pointer + 32*i);
+				break;
+			case 'F':
+				print_F_character(image_pointer + 32*i);
+				break;
+			case 'G':
+				print_G_character(image_pointer + 32*i);
+				break;
+			case 'H':
+				print_H_character(image_pointer + 32*i);
+				break;
+			case 'I':
+				print_I_character(image_pointer + 32*i);
+				break;
+			case 'J':
+				print_J_character(image_pointer + 32*i);
+				break;
+			case 'K':
+				print_K_character(image_pointer + 32*i);
+				break;
+			case 'L':
+				print_L_character(image_pointer + 32*i);
+				break;
+			case 'M':
+				print_M_character(image_pointer + 32*i);
+				break;
+			case 'N':
+				print_N_character(image_pointer + 32*i);
+				break;
+			case 'O':
+				print_O_character(image_pointer + 32*i);
+				break;
+			case 'P':
+				print_P_character(image_pointer + 32*i);
+				break;
+			case 'Q':
+				print_Q_character(image_pointer + 32*i);
+				break;
+			case 'R':
+				print_R_character(image_pointer + 32*i);
+				break;
+			case 'S':
+				print_S_character(image_pointer + 32*i);
+				break;
+			case 'T':
+				print_T_character(image_pointer + 32*i);
+				break;
+			case 'U':
+				print_U_character(image_pointer + 32*i);
+				break;
+			case 'V':
+				print_V_character(image_pointer + 32*i);
+				break;
+			case 'W':
+				print_W_character(image_pointer + 32*i);
+				break;
+			case 'X':
+				print_X_character(image_pointer + 32*i);
+				break;
+			case 'Y':
+				print_Y_character(image_pointer + 32*i);
+				break;
+			case 'Z':
+				print_Z_character(image_pointer + 32*i);
+				break;
+			case 'a':
+				print_a_character(image_pointer + 32*i);
+				break;
+			case 'b':
+				print_b_character(image_pointer + 32*i);
+				break;
+			case 'c':
+				print_c_character(image_pointer + 32*i);
+				break;
+			case 'd':
+				print_d_character(image_pointer + 32*i);
+				break;
+			case 'e':
+				print_e_character(image_pointer + 32*i);
+				break;
+			case 'f':
+				print_f_character(image_pointer + 32*i);
+				break;
+			case 'g':
+				print_g_character(image_pointer + 32*i);
+				break;
+			case 'h':
+				print_h_character(image_pointer + 32*i);
+				break;
+			case 'i':
+				print_i_character(image_pointer + 32*i);
+				break;
+			case 'j':
+				print_j_character(image_pointer + 32*i);
+				break;
+			case 'k':
+				print_k_character(image_pointer + 32*i);
+				break;
+			case 'l':
+				print_l_character(image_pointer + 32*i);
+				break;
+			case 'm':
+				print_m_character(image_pointer + 32*i);
+				break;
+			case 'n':
+				print_n_character(image_pointer + 32*i);
+				break;
+			case 'o':
+				print_o_character(image_pointer + 32*i);
+				break;
+			case 'p':
+				print_p_character(image_pointer + 32*i);
+				break;
+			case 'q':
+				print_q_character(image_pointer + 32*i);
+				break;
+			case 'r':
+				print_r_character(image_pointer + 32*i);
+				break;
+			case 's':
+				print_s_character(image_pointer + 32*i);
+				break;
+			case 't':
+				print_t_character(image_pointer + 32*i);
+				break;
+			case 'u':
+				print_u_character(image_pointer + 32*i);
+				break;
+			case 'v':
+				print_v_character(image_pointer + 32*i);
+				break;
+			case 'w':
+				print_w_character(image_pointer + 32*i);
+				break;
+			case 'x':
+				print_x_character(image_pointer + 32*i);
+				break;
+			case 'y':
+				print_y_character(image_pointer + 32*i);
+				break;
+			case 'z':
+				print_z_character(image_pointer + 32*i);
+				break;
+			case '?':
+				print_question_character(image_pointer + 32*i);
+				break;
+			case '[':
+				print_open_bracket_character(image_pointer + 32*i);
+				break;
+			case ']':
+				print_close_bracket_character(image_pointer + 32*i);
+				break;
+		}
+	}
 }
 
 static void set_kb_square_key(int* image_pointer, int* kb_sprite, int center_x, int center_y) {
@@ -292,49 +642,72 @@ void vga_init()
 	memset(image_pointer[3], 0, NUM_BYTES_BUFFER);
 	memset(image_pointer[4], 0, NUM_BYTES_BUFFER);
 
-	current_screen = IP_SCREEN;
+	current_screen = SCREEN_IP;
 
 	setColours(NORMAL_COLOURS, image_pointer);
 
 	memcpy((void*)IMG_BUF_PTR, image_pointer[0], NUM_BYTES_BUFFER);
 }
 
+void vga_clear_chat_buf()
+{
+	for (int i = 0; i < CHAT_BUF_SIZE; i++) {
+		memcpy((void *)(IMG_BUF_PTR + CHAT_BUF_OFFSET + 4*i), &yellow, 4);
+	}
+}
+
 void vga_switch_to_IP() {
-	current_screen = IP_SCREEN;
-	update_screen();
+	current_screen = SCREEN_IP;
+	vga_update();
 }
 
 void vga_switch_to_KB() {
-	current_screen = KB_SCREEN;
-	update_screen();
+	current_screen = SCREEN_KB;
+	vga_update();
 }
 
 void vga_switch_to_CHAT() {
-	current_screen = CHAT_SCREEN;
-	update_screen();
+	current_screen = SCREEN_CHAT;
+	vga_update();
+}
+
+void vga_switch_to_connect() {
+	current_screen = SCREEN_CONNECT;
+	vga_update();
+}
+
+void vga_switch_to_listen() {
+	current_screen = SCREEN_IP;
+	vga_update();
 }
 
 // Internal function that change the base screen depending on what function is being used
-static void update_screen() {
+static void vga_update() {
 	switch (current_screen) {
-	case IP_SCREEN:
-		memcpy((void*)IMG_BUF_PTR, image_pointer[0], NUM_BYTES_BUFFER);
-		break;
-	case KB_SCREEN:
-		// Have to worry about the cursor's current location
-		memcpy((void*)IMG_BUF_PTR, image_pointer[1], NUM_BYTES_BUFFER);
-		break;
-	case CHAT_SCREEN:
-		memcpy((void*)IMG_BUF_PTR, image_pointer[2], NUM_BYTES_BUFFER);
-		break;
-	default:
-		xil_printf("Unknown screen ID");
-		break;
+		case SCREEN_IP:
+			memcpy((void*)IMG_BUF_PTR, image_pointer[0], NUM_BYTES_BUFFER);
+			break;
+		case SCREEN_KB:
+			// Have to worry about the cursor's current location
+			memcpy((void*)IMG_BUF_PTR, image_pointer[1], NUM_BYTES_BUFFER);
+			break;
+		case SCREEN_CHAT:
+			memcpy((void*)IMG_BUF_PTR, image_pointer[2], NUM_BYTES_BUFFER);
+			break;
+		case SCREEN_CONNECT:
+			memcpy((void*)IMG_BUF_PTR, image_pointer[3], NUM_BYTES_BUFFER);
+			break;
+		case SCREEN_LISTEN:
+			memcpy((void*)IMG_BUF_PTR, image_pointer[4], NUM_BYTES_BUFFER);
+			break;
+		default:
+			xil_printf("Unknown screen ID");
+			break;
 	}
 }
 
 // This function lets keyboard_logic control the cursor's movement in the vga
-// This function is only called when vga screen is KB_SCREEN
+// This function is only called when vga screen is SCREEN_KB
 // Call this function before updating current location
 // Both currentID and nextID have a range from 0 to 49
 void kb_move_cursor(int currentID, int nextID) {
@@ -379,5 +752,16 @@ void vga_change() {
 void vga_loop()
 {
 	// Stub
+}
 
+void vga_print_character(int x_offset, int y_offset, char c)
+{
+	char str[1] = "";
+	strncat(str, &c, 1);
+	print_string((void *)(IMG_BUF_PTR + y_offset*HORIZONTAL_PIXEL_MAX*4 + x_offset*4), str);
+}
+
+void vga_print_string(int x_offset, int y_offset, char *str)
+{
+	print_string((void *)(IMG_BUF_PTR + y_offset*HORIZONTAL_PIXEL_MAX*4 + x_offset*4), str);
 }
