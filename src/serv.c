@@ -7,6 +7,8 @@
 #include "lwip/dhcp.h"
 #include "lwip/timeouts.h"
 #include "netif/xadapter.h"
+#include "lfsr_16bits.h"
+
 #include "platform.h"
 #include "serv.h"
 #include "state.h"
@@ -22,9 +24,11 @@ static err_t echo_recv_callback(void *arg, tcp_pcb *pcb, struct pbuf *p, err_t e
 static err_t chat_accept_callback(void *arg, tcp_pcb *pcb, err_t err);
 static err_t chat_recv_callback(void *arg, tcp_pcb *pcb, struct pbuf *p, err_t err);
 static void chat_err_callback(void *arg, err_t err);
+static void chat_send_key();
 
 extern volatile int dhcp_timeout_counter;
 extern int state;
+extern char otp_key[KEY_LEN];
 struct netif netif;
 static tcp_pcb *serv_pcb;
 static int status_x_offset = 0;
@@ -131,6 +135,9 @@ void serv_loop()
 				if (err != ERR_OK) {
 					xil_printf("ERROR: tcp_output() error: Code %d\n\r", err);
 				}
+
+				// Send encryption key
+				chat_send_key();
 			}
 			else if (c == 'n' || c == 'N') {
 				state = STATE_MENU;
@@ -238,4 +245,28 @@ static void chat_err_callback(void *arg, err_t err)
 	tcp_recv(serv_pcb, NULL);
 	xil_printf("ERROR: TCP server error: Code %d\n\rReturning to menu\n\r", *(int *)arg);
 	state = STATE_MENU;
+}
+
+// Generates and sends a new OTP encryption key to the client, valid for 4096 characters
+static void chat_send_key()
+{
+	err_t err;
+	char key[KEY_LEN + HEADER_SZ];
+
+	memcpy(key, (void *)KEY_HEADER, HEADER_SZ);
+
+	for (int i = HEADER_SZ; i < KEY_LEN + HEADER_SZ; i++) {
+		key[i] = (char)LFSR_16BITS_mReadReg(XPAR_LFSR_16BITS_0_S00_AXI_BASEADDR, LFSR_16BITS_S00_AXI_SLV_REG0_OFFSET);
+	}
+
+	strcpy(otp_key, key + HEADER_SZ);
+
+	err = tcp_write(serv_pcb, (void *)key, KEY_LEN + HEADER_SZ, TCP_WRITE_FLAG_COPY);
+	if (err != ERR_OK) {
+		xil_printf("ERROR: tcp_write() error: Code %d\n\r", err);
+	}
+	err = tcp_output(serv_pcb);
+	if (err != ERR_OK) {
+		xil_printf("ERROR: tcp_output() error: Code %d\n\r", err);
+	}
 }

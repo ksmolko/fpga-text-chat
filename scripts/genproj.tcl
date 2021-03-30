@@ -32,4 +32,4 @@ bsp reload
 catch {bsp regenerate}
 
 # Clean up junk that gets generated
-exec rm -rf $ROOT_DIR/ps7* $ROOT_DIR/*.bit .Xil $ROOT_DIR/.Xil
+exec rm -rf $ROOT_DIR/ps7* $ROOT_DIR/*.bit .Xil $ROOT_DIR/.Xil $ROOT_DIR/drivers
