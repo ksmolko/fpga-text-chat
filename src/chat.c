@@ -21,12 +21,16 @@ static int chat_buf_x_offset = 0;
 static int chat_buf_y_offset = VERTICAL_PIXEL_MAX*4/5 - ALPHABET_CHAR_LENGTH;
 
 char otp_key[KEY_LEN] = { 0 };
+int otp_key_pos = 0;
+const int key_header = 0x00000001;
+const int msg_header = 0x00000002;
 
 static void crypt(char* msg, char* key, char* out_msg);
 
 void chat_loop(tcp_pcb *pcb)
 {
 	static char buf[MSG_MAX_LEN] = "";
+	char sndbuf[MSG_MAX_LEN + MSG_OFFSET] = "";
 	char enc_msg[MSG_MAX_LEN];
 	err_t err;
 	char c;
@@ -35,17 +39,38 @@ void chat_loop(tcp_pcb *pcb)
 		c = XUartPs_ReadReg(XPAR_PS7_UART_1_BASEADDR, XUARTPS_FIFO_OFFSET);
 		if (c == '\r' || c == '\n') {
 			xil_printf("\n\r");
-			crypt(buf, otp_key, enc_msg);
-			err = tcp_write(pcb, (void *)enc_msg, strlen(enc_msg) + 1, TCP_WRITE_FLAG_COPY);
-			if (err != ERR_OK) {
-				xil_printf("ERROR: tcp_write() error: Code %d\n\r", err);
+
+			if (strncmp(buf, CMD_CLOSE, strlen(CMD_CLOSE)) == 0) {
+				tcp_write(pcb, (void *)CMD_CLOSE, strlen(CMD_CLOSE), TCP_WRITE_FLAG_COPY);
+				tcp_output(pcb);
 			}
-			err = tcp_output(pcb);
-			if (err != ERR_OK) {
-				xil_printf("ERROR: tcp_output() error: Code %d\n\r", err);
+			else {
+				// Encrypt message
+				crypt(buf, otp_key + otp_key_pos, enc_msg);
+
+				// Prepend message header to message
+				memcpy(sndbuf, (void *)&msg_header, 4);
+				memcpy(sndbuf + KEY_POS_OFFSET, (void *)&otp_key_pos, OFFSET_SZ);
+				memcpy(sndbuf + MSG_OFFSET, (void *)enc_msg, OFFSET_SZ);
+
+				// Shift key
+				otp_key_pos += strlen(buf);
+
+				// Write to packet and send message
+				err = tcp_write(pcb, (void *)enc_msg, strlen(enc_msg) + 1, TCP_WRITE_FLAG_COPY);
+				if (err != ERR_OK) {
+					xil_printf("ERROR: tcp_write() error: Code %d\n\r", err);
+				}
+				err = tcp_output(pcb);
+				if (err != ERR_OK) {
+					xil_printf("ERROR: tcp_output() error: Code %d\n\r", err);
+				}
 			}
+
+			// Print to VGA
 			vga_print_string(chat_box_x_offset, chat_box_y_offset, buf);
 			buf[0] = '\0';
+			sndbuf[0] = '\0';
 			vga_clear_chat_buf();
 			chat_box_y_offset += ALPHABET_CHAR_LENGTH;
 			chat_buf_y_offset = VERTICAL_PIXEL_MAX*4/5 - ALPHABET_CHAR_LENGTH;
@@ -84,6 +109,7 @@ err_t chat_rcv(tcp_pcb *pcb, pbuf *p, err_t err)
 		do {
 			msg = (char *)(p->payload);
 			tcp_recved(pcb, p->len);
+			
 			if (strncmp(msg, CMD_CLOSE, strlen(CMD_CLOSE)) == 0) {
 				tcp_close(pcb);
 				tcp_recv(pcb, NULL);
@@ -93,19 +119,28 @@ err_t chat_rcv(tcp_pcb *pcb, pbuf *p, err_t err)
 				state = STATE_MENU;
 				return ERR_OK;
 			}
-			else if (strncmp(msg, (void *)KEY_HEADER, HEADER_SZ) == 0) {
-				memcpy(otp_key, msg + HEADER_SZ, KEY_LEN);
+			else if (memcmp((void *)msg, (void *)&key_header, OFFSET_SZ) == 0) {
+				memcpy(otp_key, msg + OFFSET_SZ, KEY_LEN);
 			}
 			else {
 				if (first) {
 					first = false;
 				}
 				else {
-					crypt(msg, otp_key, dec_msg);
-					xil_printf("\n\r%s%s\n\r", RECEIVED_HEADER, dec_msg);
-					strcat(vga_printout, dec_msg);
-					vga_print_string(chat_buf_x_offset, chat_box_y_offset, vga_printout);
-					chat_box_y_offset += ALPHABET_CHAR_LENGTH;
+					if(memcmp((void *)msg, (void *)&msg_header, OFFSET_SZ)) {
+						// Synchronize position in key
+						otp_key_pos = *(int *)(msg + KEY_POS_OFFSET);
+
+						// Decrypt message
+						crypt(msg + MSG_OFFSET, otp_key + otp_key_pos, dec_msg);
+
+						xil_printf("\n\r%s%s\n\r", RECEIVED_HEADER, dec_msg);
+
+						// Print message to VGA
+						strcat(vga_printout, dec_msg);
+						vga_print_string(chat_buf_x_offset, chat_box_y_offset, vga_printout);
+						chat_box_y_offset += ALPHABET_CHAR_LENGTH;
+					}
 				}
 			}
 		} while (p->next != NULL);
@@ -120,7 +155,7 @@ static void crypt(char* msg, char* key, char* out_msg)
 	u32_t output[OTP_CRYPT_NUM_REGS / 3];
 
 	// Clear registers
-	for (int i = 0; i < OTP_CRYPT_NUM_REGS; i++) {
+	for (int i = 0; i < OTP_CRYPT_NUM_REGS * 2 / 3; i++) {
 		OTP_CRYPT_mWriteReg(XPAR_OTP_CRYPT_0_S00_AXI_BASEADDR, OTP_CRYPT_REG_SIZE*i, 0);
 	}
 
@@ -131,7 +166,7 @@ static void crypt(char* msg, char* key, char* out_msg)
 
 	// Write message to input registers
 	for (int i = OTP_CRYPT_NUM_REGS / 3; i < OTP_CRYPT_NUM_REGS * 2 / 3; i++) {
-		OTP_CRYPT_mWriteReg(XPAR_OTP_CRYPT_0_S00_AXI_BASEADDR, OTP_CRYPT_REG_SIZE*i, *((int *)(msg + OTP_CRYPT_REG_SIZE*i)));
+		OTP_CRYPT_mWriteReg(XPAR_OTP_CRYPT_0_S00_AXI_BASEADDR, OTP_CRYPT_REG_SIZE*i, *((int *)(msg + OTP_CRYPT_REG_SIZE*(i - OTP_CRYPT_NUM_REGS / 3))));
 	}
 
 	// Read output message from output registers
@@ -140,5 +175,5 @@ static void crypt(char* msg, char* key, char* out_msg)
 	}
 
 	memcpy(out_msg, (char *)output, OTP_CRYPT_NUM_REGS / 3 * OTP_CRYPT_REG_SIZE);
-	out_msg[strlen(msg) + 1] = '\0';
+	out_msg[strlen(msg)] = '\0';
 }

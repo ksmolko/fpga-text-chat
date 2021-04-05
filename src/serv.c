@@ -29,6 +29,7 @@ static void chat_send_key();
 extern volatile int dhcp_timeout_counter;
 extern int state;
 extern char otp_key[KEY_LEN];
+extern const int key_header;
 struct netif netif;
 static tcp_pcb *serv_pcb;
 static int status_x_offset = 0;
@@ -251,17 +252,17 @@ static void chat_err_callback(void *arg, err_t err)
 static void chat_send_key()
 {
 	err_t err;
-	char key[KEY_LEN + HEADER_SZ];
+	char key[KEY_LEN + OFFSET_SZ];
 
-	memcpy(key, (void *)KEY_HEADER, HEADER_SZ);
+	memcpy(key, &key_header, OFFSET_SZ);
 
-	for (int i = HEADER_SZ; i < KEY_LEN + HEADER_SZ; i++) {
+	for (int i = OFFSET_SZ; i < KEY_LEN + OFFSET_SZ; i++) {
 		key[i] = (char)LFSR_16BITS_mReadReg(XPAR_LFSR_16BITS_0_S00_AXI_BASEADDR, LFSR_16BITS_S00_AXI_SLV_REG0_OFFSET);
 	}
 
-	strcpy(otp_key, key + HEADER_SZ);
+	strcpy(otp_key, key + OFFSET_SZ);
 
-	err = tcp_write(serv_pcb, (void *)key, KEY_LEN + HEADER_SZ, TCP_WRITE_FLAG_COPY);
+	err = tcp_write(serv_pcb, (void *)key, KEY_LEN + OFFSET_SZ, TCP_WRITE_FLAG_COPY);
 	if (err != ERR_OK) {
 		xil_printf("ERROR: tcp_write() error: Code %d\n\r", err);
 	}

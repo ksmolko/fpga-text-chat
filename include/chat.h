@@ -4,9 +4,11 @@
 
 #define LOCAL_CHAT_PORT 25567
 #define MSG_MAX_LEN 128
-#define HEADER_SZ 4
+#define OFFSET_SZ sizeof(int)
+#define MSG_TYPE_OFFSET 0
+#define KEY_POS_OFFSET OFFSET_SZ
+#define MSG_OFFSET OFFSET_SZ * 2
 #define KEY_LEN 4096
-#define KEY_HEADER 0x00000001
 
 
 typedef struct tcp_pcb tcp_pcb;

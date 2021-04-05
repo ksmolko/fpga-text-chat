@@ -4,6 +4,7 @@
 #include "xuartps.h"
 #include "xparameters.h"
 #include "xil_io.h"
+#include "otp_crypt.h"
 #include "vga.h"
 #include "shell.h"
 #include "serv.h"
@@ -107,7 +108,19 @@ void shell_loop()
 					serv_init(CHAT_SERV, port);
 				}
 			}
-
+			/*char enc[CMD_MAX_LEN];
+			char encprint[CMD_MAX_LEN] = "\0";
+			char dec[CMD_MAX_LEN];
+			char decprint[CMD_MAX_LEN] = "\0";
+			char key[CMD_MAX_LEN] = "3478ntv209572340895n230457mncv32098457n23984057nm02394857n34908257m3409545g45t45564456456hfsdfs33ry2783r29387hhd283974hdd234dd7h";
+			crypt(buf, key, enc);
+			strcat(encprint, enc);
+			strcat(encprint, "\n\r");
+			xil_printf(encprint);
+			crypt(enc, key, dec);
+			strcat(decprint, dec);
+			strcat(decprint, "\n\r");
+			xil_printf(decprint);*/
 			buf[0] = '\0';
 		}
 		else {
