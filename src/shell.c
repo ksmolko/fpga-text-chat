@@ -18,6 +18,7 @@
 #define CMD_RECORD "record"
 #define CMD_PLAYBACK "playback"
 #define CMD_STREAM "stream"
+#define CMD_RECV_PLAYBACK "recv_playback"
 #define STATUS_FAIL 0
 #define STATUS_SUCCESS 1
 #define IP_USAGE "Usage: connect [ip] [port]\n\r"
@@ -120,6 +121,9 @@ void shell_loop()
 			}
 			else if (strcmp(token, CMD_STREAM) == 0) {
 				audio_stream();
+			}
+			else if (strcmp(token, CMD_RECV_PLAYBACK) == 0) {
+				chat_audio_playback_recv();
 			}
 
 			buf[0] = '\0';
