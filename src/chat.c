@@ -170,8 +170,12 @@ err_t chat_rcv(tcp_pcb *pcb, pbuf *p, err_t err)
 		if (strncmp(packet_header, AUDIO_PACKET_HEADER, strlen(AUDIO_PACKET_HEADER)) == 0) {
 			// Header of an audio packet
 			// Right now, I'm assuming that the audio packets will be sent in order
+			xil_printf("Receiving audio data\n\r");
 			memcpy((void *)AUDIO_PACKET_RECV_BASE, msg + AUDIO_PACKET_HEADER_SIZE, AUDIO_PACKET_MAX_SIZE);
 			audio_recved_bytes_offset += AUDIO_PACKET_MAX_SIZE;
+			if (audio_recved_bytes_offset >= AUDIO_MEMORY_MAX_OFFSET) {
+				xil_printf("Finish receiving audio data\n\r");
+			}
 		}
 		if (strncmp(msg, CMD_CLOSE, strlen(CMD_CLOSE)) == 0) {
 			// if received a close message
