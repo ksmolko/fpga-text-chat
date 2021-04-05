@@ -29,7 +29,7 @@ static void chat_send_key();
 extern volatile int dhcp_timeout_counter;
 extern int state;
 extern char otp_key[KEY_LEN];
-extern const int key_header;
+extern const char *key_header;
 struct netif netif;
 static tcp_pcb *serv_pcb;
 static int status_x_offset = 0;
@@ -254,7 +254,7 @@ static void chat_send_key()
 	err_t err;
 	char key[KEY_LEN + OFFSET_SZ];
 
-	memcpy(key, &key_header, OFFSET_SZ);
+	memcpy(key, key_header, OFFSET_SZ);
 
 	for (int i = OFFSET_SZ; i < KEY_LEN + OFFSET_SZ; i++) {
 		key[i] = (char)LFSR_16BITS_mReadReg(XPAR_LFSR_16BITS_0_S00_AXI_BASEADDR, LFSR_16BITS_S00_AXI_SLV_REG0_OFFSET);

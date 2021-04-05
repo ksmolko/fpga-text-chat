@@ -21,9 +21,9 @@ static int chat_buf_x_offset = 0;
 static int chat_buf_y_offset = VERTICAL_PIXEL_MAX*4/5 - ALPHABET_CHAR_LENGTH;
 
 char otp_key[KEY_LEN] = { 0 };
-int otp_key_pos = 0;
-const int key_header = 0x00000001;
-const int msg_header = 0x00000002;
+//int otp_key_pos = 0;
+const char *key_header = "0001";
+const char *msg_header = "0002";
 
 static void crypt(char* msg, char* key, char* out_msg);
 
@@ -46,18 +46,19 @@ void chat_loop(tcp_pcb *pcb)
 			}
 			else {
 				// Encrypt message
-				crypt(buf, otp_key + otp_key_pos, enc_msg);
+				crypt(buf, otp_key /*+ otp_key_pos*/, enc_msg);
+				xil_printf("Encrypted message: %s\n\r", enc_msg);
 
 				// Prepend message header to message
-				memcpy(sndbuf, (void *)&msg_header, 4);
-				memcpy(sndbuf + KEY_POS_OFFSET, (void *)&otp_key_pos, OFFSET_SZ);
-				memcpy(sndbuf + MSG_OFFSET, (void *)enc_msg, OFFSET_SZ);
+				memcpy(sndbuf, msg_header, OFFSET_SZ);
+				//memcpy(sndbuf + KEY_POS_OFFSET, (void *)&otp_key_pos, OFFSET_SZ);
+				memcpy(sndbuf + MSG_OFFSET, (void *)enc_msg, strlen(enc_msg));
 
 				// Shift key
-				otp_key_pos += strlen(buf);
+				//otp_key_pos += strlen(buf);
 
 				// Write to packet and send message
-				err = tcp_write(pcb, (void *)enc_msg, strlen(enc_msg) + 1, TCP_WRITE_FLAG_COPY);
+				err = tcp_write(pcb, (void *)sndbuf, strlen(sndbuf) + 1, TCP_WRITE_FLAG_COPY);
 				if (err != ERR_OK) {
 					xil_printf("ERROR: tcp_write() error: Code %d\n\r", err);
 				}
@@ -96,54 +97,61 @@ void chat_loop(tcp_pcb *pcb)
 
 err_t chat_rcv(tcp_pcb *pcb, pbuf *p, err_t err)
 {
-	static bool first = true;
+	//static bool first = true;
 	char *msg;
 	char dec_msg[MSG_MAX_LEN];
 	char vga_printout[MSG_MAX_LEN + RECEIVED_HEADER_LEN] = "Other: ";
 
-	if (state == STATE_CALL_SERVER) {
+	/*if (state == STATE_CALL_SERVER) {
 		first = false;
-	}
+	}*/
 
 	if (err == ERR_OK && p != NULL) {
-		do {
-			msg = (char *)(p->payload);
-			tcp_recved(pcb, p->len);
-			
-			if (strncmp(msg, CMD_CLOSE, strlen(CMD_CLOSE)) == 0) {
-				tcp_close(pcb);
-				tcp_recv(pcb, NULL);
-				pbuf_free(p);
-				xil_printf("\n\rConnection closed by other user\n\rReturning to menu\n\r");
-				vga_switch_to_IP();
-				state = STATE_MENU;
-				return ERR_OK;
-			}
-			else if (memcmp((void *)msg, (void *)&key_header, OFFSET_SZ) == 0) {
-				memcpy(otp_key, msg + OFFSET_SZ, KEY_LEN);
+		//msg = (char *)(p->payload);
+		//tcp_recved(pcb, p->len);
+
+		msg = malloc(p->tot_len);
+		pbuf_copy_partial(p, msg, p->tot_len, 0);
+		
+		if (strncmp(msg, CMD_CLOSE, strlen(CMD_CLOSE)) == 0) {
+			tcp_close(pcb);
+			tcp_recv(pcb, NULL);
+			pbuf_free(p);
+			xil_printf("\n\rConnection closed by other user\n\rReturning to menu\n\r");
+			vga_switch_to_IP();
+			state = STATE_MENU;
+			return ERR_OK;
+		}
+		else if (memcmp((void *)msg, (void *)key_header, OFFSET_SZ) == 0) {
+			memcpy(otp_key, msg + OFFSET_SZ, KEY_LEN);
+		}
+		else {
+			/*if (first) {
+				first = false;
+			}*/
+			//else {
+			if(memcmp((void *)msg, (void *)msg_header, OFFSET_SZ) == 0) {
+				// Synchronize position in key
+				//otp_key_pos = *(int *)(msg + KEY_POS_OFFSET);
+
+				// Decrypt message
+				xil_printf("Received encrypted message: %s\n\r", msg + MSG_OFFSET);
+				crypt(msg + MSG_OFFSET, otp_key /*+ otp_key_pos*/, dec_msg);
+
+				xil_printf("\n\r%s%s\n\r", RECEIVED_HEADER, dec_msg);
+
+				// Print message to VGA
+				strcat(vga_printout, dec_msg);
+				vga_print_string(chat_buf_x_offset, chat_box_y_offset, vga_printout);
+				chat_box_y_offset += ALPHABET_CHAR_LENGTH;
 			}
 			else {
-				if (first) {
-					first = false;
-				}
-				else {
-					if(memcmp((void *)msg, (void *)&msg_header, OFFSET_SZ)) {
-						// Synchronize position in key
-						otp_key_pos = *(int *)(msg + KEY_POS_OFFSET);
-
-						// Decrypt message
-						crypt(msg + MSG_OFFSET, otp_key + otp_key_pos, dec_msg);
-
-						xil_printf("\n\r%s%s\n\r", RECEIVED_HEADER, dec_msg);
-
-						// Print message to VGA
-						strcat(vga_printout, dec_msg);
-						vga_print_string(chat_buf_x_offset, chat_box_y_offset, vga_printout);
-						chat_box_y_offset += ALPHABET_CHAR_LENGTH;
-					}
-				}
+				xil_printf("Not a message: Header %X\n\r", *(int *)msg);
 			}
-		} while (p->next != NULL);
+			//}
+		}
+		tcp_recved(pcb, p->tot_len);
+		free(msg);
 	}
 
 	return ERR_OK;
