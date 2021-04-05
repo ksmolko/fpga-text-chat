@@ -32,6 +32,10 @@ void chat_loop(tcp_pcb *pcb)
 	err_t err;
 	char c;
 
+	if (isRecording == RECORDING) {
+		chat_audio_record();
+	}
+
 	if (XUartPs_IsReceiveData(XPAR_PS7_UART_1_BASEADDR)) {
 		c = XUartPs_ReadReg(XPAR_PS7_UART_1_BASEADDR, XUARTPS_FIFO_OFFSET);
 		if (c == '\r' || c == '\n') {
@@ -60,7 +64,7 @@ void chat_loop(tcp_pcb *pcb)
 						if (err != ERR_OK) {
 							xil_printf("ERROR: tcp_output() error: Code %d\n\r", err);
 						}
-
+						xil_printf("Current offset: %d", offset);
 						offset += AUDIO_PACKET_MAX_SIZE;
 					}
 					// After sending all audio data

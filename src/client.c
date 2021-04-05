@@ -6,7 +6,6 @@
 #include "chat.h"
 #include "vga.h"
 #include "client.h"
-#include "audio.h"
 
 
 static err_t chat_connect_callback(void *arg, tcp_pcb *pcb, err_t err);
@@ -63,9 +62,7 @@ void client_connect(const ip_addr_t *ip, u16 port)
 void client_loop()
 {
 	xemacif_input(&netif);
-	if (isRecording == RECORDING) {
-		chat_audio_record();
-	}
+
 	if (state == STATE_CALL_CLIENT) {
 		chat_loop(client_pcb);
 	}
