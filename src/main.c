@@ -7,6 +7,7 @@
 #include "client.h"
 #include "state.h"
 #include "chat.h"
+#include "audio.h"
 
 
 int state = STATE_MENU;
@@ -24,11 +25,24 @@ void init()
 	ethernet_init();
 	serv_init(ECHO_SERV, ECHO_PORT);
 	client_init();
+
+	//Configure the IIC data structure
+	IicConfig(XPAR_XIICPS_0_DEVICE_ID);
+
+	//Configure the Audio Codec's PLL
+	AudioPllConfig();
+
+	//Configure the Line in and Line out ports.
+	//Call LineInLineOutConfig() for a configuration that
+	//enables the HP jack too.
+	AudioConfigureJacks();
+	chat_audio_init();
 }
 
 void tick()
 {
 	vga_loop();
+
 
 	if (state == STATE_MENU || state == STATE_MENU_CONNECT || state == STATE_MENU_LISTEN) {
 		shell_loop();

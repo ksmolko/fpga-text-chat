@@ -135,12 +135,10 @@ void Press_center() {
 	case FUNCTION_BACKSPACE:
 		// Backspace implementation
 		// Decrease the buffer offset by 1
-		xil_printf("Backspace stub\n\r");
 		kb_state.buffer_offset = kb_state.buffer_offset - 1;
 		break;
 	case FUNCTION_CAPLOCK:
 		// Caplock implementation
-		xil_printf("Caplock stub\n\r");
 		// TODO: think of a better way with XOR to toggle
 		if (kb_state.is_caplock_on == 0) {
 			xil_printf("Toggle caplock on\n\r");
@@ -157,7 +155,6 @@ void Press_center() {
 		// Then reset the buffer offset
 
 		// Currently, we're just outputting the buffer through UART
-		xil_printf("Enter stub\n\r");
 		for (char i = 0; i < kb_state.buffer_offset; ++i) {
 			memcpy(&character, (void*)BUFFER_BASE_ADDR + i, 1);
 			xil_printf("%c", character);

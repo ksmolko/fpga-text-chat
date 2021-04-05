@@ -9,15 +9,20 @@
 #include "serv.h"
 #include "state.h"
 #include "client.h"
+#include "audio.h"
 
 #define CMD_MAX_LEN 256
 #define CMD_CONNECT "connect"
 #define CMD_SWITCH_SCREEN "switch"
 #define CMD_LISTEN "listen"
+#define CMD_RECORD "record"
+#define CMD_PLAYBACK "playback"
+#define CMD_STREAM "stream"
 #define STATUS_FAIL 0
 #define STATUS_SUCCESS 1
 #define IP_USAGE "Usage: connect [ip] [port]\n\r"
 #define LISTEN_USAGE "Usage: listen [port]\n\r"
+
 #define UART_BASEADDR XPAR_PS7_UART_1_BASEADDR
 
 #define PROMPT_IP "ENTER THE REMOTE IP AND PORT: "
@@ -106,6 +111,15 @@ void shell_loop()
 					port = atoi(token);
 					serv_init(CHAT_SERV, port);
 				}
+			}
+			else if (strcmp(token, CMD_RECORD) == 0) {
+				audio_record();
+			}
+			else if (strcmp(token, CMD_PLAYBACK) == 0) {
+				audio_playback();
+			}
+			else if (strcmp(token, CMD_STREAM) == 0) {
+				audio_stream();
 			}
 
 			buf[0] = '\0';
