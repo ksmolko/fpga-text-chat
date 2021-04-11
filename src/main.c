@@ -1,3 +1,5 @@
+#include <push_buttons_intr.h>
+
 #include "xil_cache_l.h"
 
 #include "platform.h"
@@ -7,7 +9,6 @@
 #include "client.h"
 #include "state.h"
 #include "chat.h"
-
 
 int state = STATE_MENU;
 
@@ -24,6 +25,7 @@ void init()
 	ethernet_init();
 	serv_init(ECHO_SERV, ECHO_PORT);
 	client_init();
+	push_buttons_init();
 }
 
 void tick()
