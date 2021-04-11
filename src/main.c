@@ -1,5 +1,3 @@
-#include <push_buttons_intr.h>
-
 #include "xil_cache_l.h"
 
 #include "platform.h"
@@ -18,14 +16,13 @@ void init()
 	Xil_L1DCacheDisable();
 	Xil_L2CacheDisable();
 
-	timer_init();
+
 	interrupts_init();
 	vga_init();
 	shell_init();
 	ethernet_init();
 	serv_init(ECHO_SERV, ECHO_PORT);
 	client_init();
-	push_buttons_init();
 }
 
 void tick()
