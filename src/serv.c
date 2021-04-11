@@ -41,9 +41,9 @@ void ethernet_init()
 	ip_addr_t ipaddr, netmask, gw;
 	unsigned char mac_address[] = { 0x00, 0x0a, 0x35, 0x00, 0x01, 0x02 };
 
-	IP4_ADDR(&ipaddr, 192, 168, 0, 20);
+	IP4_ADDR(&ipaddr, 192, 168, 0, 23);
 	IP4_ADDR(&netmask, 255, 255, 255, 0);
-	IP4_ADDR(&gw, 192, 168, 0, 1);
+	IP4_ADDR(&gw, 192, 168, 0, 21);
 
 	lwip_init();
 

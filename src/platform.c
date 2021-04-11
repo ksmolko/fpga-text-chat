@@ -7,12 +7,77 @@
 #include "lwip/dhcp.h"
 #include "netif/xadapter.h"
 #include "platform.h"
+#include "xgpio.h"
+
+
+// Parameter definitions
+#define INTC_DEVICE_ID 		XPAR_PS7_SCUGIC_0_DEVICE_ID
+#define BTNS_DEVICE_ID		XPAR_AXI_GPIO_0_DEVICE_ID
+#define INTC_GPIO_INTERRUPT_ID XPAR_FABRIC_AXI_GPIO_0_IP2INTC_IRPT_INTR
+
+#define BTN_INT 			XGPIO_IR_CH1_MASK
+
+#define BTN_RELEASE 0x00
+#define BTNU 0x10
+#define BTNC 0x1
+#define BTND 0x2
+#define BTNR 0x4
+#define BTNL 0x8
 
 
 void tcp_tmr(void);
 
 static XScuTimer tmr_instance;
+static XGpio BTNInst;
+static XScuGic INTCInst;
 volatile int dhcp_timeout_counter = 24;
+
+
+static int btn_value;
+
+
+
+void BTN_Intr_Handler(void *InstancePtr)
+{
+	// Disable GPIO interrupts
+	XGpio_InterruptDisable(&BTNInst, BTN_INT);
+	// Ignore additional button presses
+	if ((XGpio_InterruptGetStatus(&BTNInst) & BTN_INT) !=
+			BTN_INT) {
+			return;
+		}
+	btn_value = XGpio_DiscreteRead(&BTNInst, 1);
+
+	switch (btn_value) {
+	case BTN_RELEASE:
+		xil_printf("Ignore releasing button\n\r");
+		break;
+	case BTNC:
+		xil_printf("Center button pressed\n\r");
+		// Cursor logic goes here
+
+		// KB logic goes here
+		break;
+	case BTNU:
+		xil_printf("Up button pressed\n\r");
+		break;
+	case BTND:
+		xil_printf("Down button pressed\n\r");
+		break;
+	case BTNL:
+		xil_printf("Left button pressed\n\r");
+		break;
+	case BTNR:
+		xil_printf("Right button pressed\n\r");
+		break;
+	default:
+		break;
+	}
+
+    (void)XGpio_InterruptClear(&BTNInst, BTN_INT);
+    // Enable GPIO interrupts
+    XGpio_InterruptEnable(&BTNInst, BTN_INT);
+}
 
 // interrupt_handler() gets called every 250ms
 void interrupt_handler()
@@ -35,42 +100,122 @@ void interrupt_handler()
 	}
 }
 
-void timer_init()
+void interrupts_init()
 {
-	int status;
-	int load_value = XPAR_CPU_CORTEXA9_0_CPU_CLK_FREQ_HZ / 8; // 250ms
-
 	XScuTimer_Config *tmr_cfg;
-	tmr_cfg = XScuTimer_LookupConfig(XPAR_SCUTIMER_DEVICE_ID);
-	status = XScuTimer_CfgInitialize(&tmr_instance, tmr_cfg, tmr_cfg->BaseAddr);
+	XScuGic_Config *IntcConfig;
+	int status;
 
+	// Interrupt controller initialisation
+	// Look up the config information for the GIC
+	IntcConfig = XScuGic_LookupConfig(INTC_DEVICE_ID);
+	// Initialise the GIC using the config information
+	status = XScuGic_CfgInitialize(&INTCInst, IntcConfig, IntcConfig->CpuBaseAddress);
+	if (status != XST_SUCCESS){
+		xil_printf("ERROR: XScuGic Cfg initialization failed\n\r");
+		return;
+	}
+
+	// Timer related
+	// Look up the the config information for the timer
+	tmr_cfg = XScuTimer_LookupConfig(XPAR_SCUTIMER_DEVICE_ID);
+	// Initialise the timer using the config information
+	status = XScuTimer_CfgInitialize(&tmr_instance, tmr_cfg, tmr_cfg->BaseAddr);
 	if (status != XST_SUCCESS){
 		xil_printf("ERROR: ScuTimer Cfg initialization failed\n\r");
 		return;
 	}
 
+	// Self Test for Timer
 	status = XScuTimer_SelfTest(&tmr_instance);
 	if (status != XST_SUCCESS){
 		xil_printf("ERROR: ScuTimer self test failed\n\r");
 		return;
 	}
 
-	XScuTimer_EnableAutoReload(&tmr_instance);
-	XScuTimer_LoadTimer(&tmr_instance, load_value);
-}
+	// GPIO related
+	// Initialise Push Buttons
+	status = XGpio_Initialize(&BTNInst, BTNS_DEVICE_ID);
+	if (status != XST_SUCCESS){
+		xil_printf("ERROR: XGpio Cfg initialization failed\n\r");
+		return;
+	}
 
-void interrupts_init()
-{
+	// Set all buttons direction to inputs
+	XGpio_SetDataDirection(&BTNInst, 1, 0xFF);
+
+
+
+
+	// Initialize Exception handling on the ARM processor
 	Xil_ExceptionInit();
-	XScuGic_DeviceInitialize(XPAR_SCUGIC_SINGLE_DEVICE_ID);
-	Xil_ExceptionRegisterHandler(XIL_EXCEPTION_ID_IRQ_INT, (Xil_ExceptionHandler)XScuGic_DeviceInterruptHandler, (void *)XPAR_SCUGIC_SINGLE_DEVICE_ID);
-	XScuGic_RegisterHandler(XPAR_SCUGIC_SINGLE_DEVICE_ID, XPAR_SCUTIMER_INTR, (Xil_ExceptionHandler)interrupt_handler, NULL);
+
+	// Connect the supplied Xilinx general interrupt handler
+	// to the interrupt handling logic in the processor.
+	// All interrupts go through the interrupt controller, so the
+	// ARM processor has to first "ask" the interrupt controller
+	// which peripheral generated the interrupt.  The handler that
+	// does this is supplied by Xilinx and is called "XScuGic_InterruptHandler"
+	Xil_ExceptionRegisterHandler(XIL_EXCEPTION_ID_IRQ_INT, (Xil_ExceptionHandler)XScuGic_InterruptHandler, &INTCInst);
+
+	// Assign (connect) our interrupt handler for our Timer
+	status = XScuGic_Connect(&INTCInst,
+								XPAR_SCUTIMER_INTR,
+								(Xil_ExceptionHandler)interrupt_handler,
+								NULL);
+	if (status != XST_SUCCESS){
+		xil_printf("ERROR: XScuGic connect timer failed\n\r");
+		return;
+	}
+
+
+
+	// Assign (connect) our interrupt handler for our push buttons
+	Xil_ExceptionRegisterHandler(XIL_EXCEPTION_ID_INT, (Xil_ExceptionHandler)XScuGic_InterruptHandler, &INTCInst);
+	status = XScuGic_Connect(&INTCInst,
+							 	 INTC_GPIO_INTERRUPT_ID,
+						  	  	 (Xil_ExceptionHandler)BTN_Intr_Handler,
+						  	  	 &BTNInst);
+	if (status != XST_SUCCESS){
+		xil_printf("ERROR: XScuGic connect gpio failed\n\r");
+		return;
+	}
+
+	// Enable the interrupt *input* on the GIC for the timer's interrupt
+	XScuGic_Enable(&INTCInst, XPAR_SCUTIMER_INTR);
+
+
+
+	// Enable the interrupt *output* in the timer.
+	XScuTimer_EnableInterrupt(&tmr_instance);
+
+
+	// Load the timer with a value that represents one second of real time
+	int load_value = XPAR_CPU_CORTEXA9_0_CPU_CLK_FREQ_HZ / 8; // 250ms
+	XScuTimer_LoadTimer(&tmr_instance, load_value);
+
+	// Enable Auto reload mode on the timer.  When it expires, it re-loads
+	// the original value automatically.  This means that the timing interval
+	// is never skewed by the time taken for the interrupt handler to run
+	XScuTimer_EnableAutoReload(&tmr_instance);
+
+	// Enable GPIO interrupts interrupt
+	// Enable the interrupt *input* on the GIC for the push buttons gpio
+	XScuGic_Enable(&INTCInst, INTC_GPIO_INTERRUPT_ID);
+
+	XGpio_InterruptEnable(&BTNInst, 1);
+	XGpio_InterruptGlobalEnable(&BTNInst);
+
+	// Enable interrupts in the ARM Processor.
+	Xil_ExceptionEnable();
+	xil_printf("Finish interrupts_init()\n\r");
 }
 
 void interrupts_enable()
 {
-	Xil_ExceptionEnableMask(XIL_EXCEPTION_IRQ);
-	XScuTimer_EnableInterrupt(&tmr_instance);
+	// Start the timer
+	xil_printf("Starting the timer interrupt\n\r");
 	XScuTimer_Start(&tmr_instance);
 	return;
 }
+
