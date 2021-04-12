@@ -135,6 +135,10 @@ void shell_loop()
 				}
 			}
 
+			// Resetting onscreen keyboard data
+			Keyboard_reset();
+			kb_state.ip_kb_enter_pressed = 0;
+
 			xil_printf("IP Addr: %s\n\r", ipAddr_c);
 			xil_printf("Port num: %s\n\r", port_c);
 
@@ -146,9 +150,13 @@ void shell_loop()
 				memcpy(&character, (void*)BUFFER_BASE_ADDR + i, 1);
 				strncat(port_c, &character, 1);
 			}
+			// Resetting onscreen keyboard data
+			Keyboard_reset();
+			kb_state.ip_kb_enter_pressed = 0;
 			xil_printf("Port num: %s\n\r", port_c);
 			port = atoi(port_c);
 			serv_init(CHAT_SERV, port);
 		}
+
 	}
 }
