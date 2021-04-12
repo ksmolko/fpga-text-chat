@@ -117,9 +117,12 @@ void serv_loop()
 		chat_loop(serv_pcb);
 	}
 	else if (state == STATE_ACCEPT) {
+		// Accept or decline request from UART
 		if (XUartPs_IsReceiveData(XPAR_PS7_UART_1_BASEADDR)) {
 			c = XUartPs_ReadReg(XPAR_PS7_UART_1_BASEADDR, XUARTPS_FIFO_OFFSET);
 			xil_printf("%c\n\r", c);
+			// Accept the request logic
+			// Cursor logic can replace c == 'y'
 			if (c == 'y' || c == 'Y'){
 				state = STATE_CALL_SERVER;
 				xil_printf("Chat has begun\n\n\r");
@@ -140,6 +143,7 @@ void serv_loop()
 				// Send encryption key
 				chat_send_key();
 			}
+			// Decline the request logic
 			else if (c == 'n' || c == 'N') {
 				state = STATE_MENU;
 				xil_printf("Refusing connection. Returning to menu\n\r");
@@ -153,6 +157,9 @@ void serv_loop()
 				xil_printf("Invalid selection, try again: ");
 			}
 		}
+
+		// Accept or decline request from push buttons
+		// Check platform.c
 	}
 
 }

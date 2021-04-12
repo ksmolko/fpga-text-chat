@@ -104,6 +104,7 @@ void shell_loop()
 					xil_printf(LISTEN_USAGE);
 				}
 				else {
+					state = STATE_MENU_LISTEN;
 					port = atoi(token);
 					serv_init(CHAT_SERV, port);
 				}

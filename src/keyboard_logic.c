@@ -13,18 +13,14 @@
 #define FUNCTION_ENTER 11+12*2
 #define FUNCTION_RETURN 11+12*3
 
-#define BUFFER_BASE_ADDR 0x06000000
-#define BUFFER_OFFSET_MAX 100
 
-typedef struct keyboard_state_s keyboard_state;
-struct keyboard_state_s {
-	int current_x;
-	int current_y;
-	int is_caplock_on;
-	char buffer_offset;	// Since we only want to increment the offset by 1 byte
-};
+extern int state;	// From main.c
+extern int is_in_kb;	// From platform.c
 
-static keyboard_state kb_state;
+keyboard_state kb_state;
+// The text box will start at the top left corner of the screen
+static int chat_buf_x_offset = 0;
+static int chat_buf_y_offset = 0;
 
 
 /*
@@ -53,6 +49,17 @@ void Keyboard_init() {
 	kb_state.current_y = 0;
 	kb_state.is_caplock_on = 0;
 	kb_state.buffer_offset = 0;
+	kb_state.chat_kb_enter_pressed = 0;
+	vga_switch_to_KB();
+}
+
+void Keyboard_reset() {
+	kb_state.current_x = 0;
+	kb_state.current_y = 0;
+	kb_state.is_caplock_on = 0;
+	kb_state.buffer_offset = 0;
+	chat_buf_x_offset = 0;
+	chat_buf_y_offset = 0;
 }
 
 static int calculateAddress() {
@@ -62,7 +69,6 @@ static int calculateAddress() {
 // From the address get the character
 
 void Press_up() {
-	xil_printf("Pressing keyboard up\n\r");
 	// If cursor is at the top, don't do anything
 	if (kb_state.current_y != KEYBOARD_Y_MIN) {
 		// Cursor is not at the top
@@ -74,11 +80,9 @@ void Press_up() {
 		// TODO: notify the vga.c to update the cursor
 		kb_move_cursor(currentAddr, nextAddr);
 	}
-	xil_printf("Current_x: %d Current_y: %d\n\r", kb_state.current_x, kb_state.current_y);
 }
 
 void Press_down() {
-	xil_printf("Pressing keyboard down\n\r");
 	// If cursor is at the top, don't do anything
 	if (kb_state.current_y != KEYBOARD_Y_MAX) {
 		// Cursor is not at the bottom
@@ -90,11 +94,9 @@ void Press_down() {
 		// TODO: notify the vga.c to update the cursor
 		kb_move_cursor(currentAddr, nextAddr);
 	}
-	xil_printf("Current_x: %d Current_y: %d\n\r", kb_state.current_x, kb_state.current_y);
 }
 
 void Press_left() {
-	xil_printf("Pressing keyboard left\n\r");
 	// If cursor is at the top, don't do anything
 	if (kb_state.current_x != KEYBOARD_X_MIN) {
 		// Cursor is not at the top
@@ -106,11 +108,9 @@ void Press_left() {
 		// TODO: notify the vga.c to update the cursor
 		kb_move_cursor(currentAddr, nextAddr);
 	}
-	xil_printf("Current_x: %d Current_y: %d\n\r", kb_state.current_x, kb_state.current_y);
 }
 
 void Press_right() {
-	xil_printf("Pressing keyboard right\n\r");
 	// If cursor is at the top, don't do anything
 	if (kb_state.current_x != KEYBOARD_X_MAX) {
 		// Cursor is not at the top
@@ -122,11 +122,9 @@ void Press_right() {
 		// TODO: notify the vga.c to update the cursor
 		kb_move_cursor(currentAddr, nextAddr);
 	}
-	xil_printf("Current_x: %d Current_y: %d\n\r", kb_state.current_x, kb_state.current_y);
 }
 
 void Press_center() {
-	xil_printf("Pressing keyboard center\n\r");
 	// Get current address
 	int currentAddress = calculateAddress();
 	xil_printf("Current address: %d\n\r", currentAddress);
@@ -135,18 +133,27 @@ void Press_center() {
 	case FUNCTION_BACKSPACE:
 		// Backspace implementation
 		// Decrease the buffer offset by 1
-		xil_printf("Backspace stub\n\r");
 		kb_state.buffer_offset = kb_state.buffer_offset - 1;
+
+		// Update the vga
+		// Clear the last character on vga
+		vga_print_character(chat_buf_x_offset, chat_buf_y_offset, '#');
+		// Move the offset back by 1 char
+		if (chat_buf_x_offset == 0 && chat_buf_y_offset > 0) {
+			// First character on next line
+			chat_buf_x_offset = HORIZONTAL_PIXEL_MAX - ALPHABET_CHAR_LENGTH;
+			chat_buf_y_offset -= ALPHABET_CHAR_LENGTH;
+		} else {
+			// A character in a line
+			chat_buf_x_offset -= ALPHABET_CHAR_LENGTH;
+		}
+
 		break;
 	case FUNCTION_CAPLOCK:
 		// Caplock implementation
-		xil_printf("Caplock stub\n\r");
-		// TODO: think of a better way with XOR to toggle
 		if (kb_state.is_caplock_on == 0) {
-			xil_printf("Toggle caplock on\n\r");
 			kb_state.is_caplock_on = 1;
 		} else {
-			xil_printf("Toggle caplock off\n\r");
 			kb_state.is_caplock_on = 0;
 		}
 
@@ -156,20 +163,26 @@ void Press_center() {
 		// Read the characters in the buffer from offset 0 to the current buffer offset
 		// Then reset the buffer offset
 
-		// Currently, we're just outputting the buffer through UART
-		xil_printf("Enter stub\n\r");
-		for (char i = 0; i < kb_state.buffer_offset; ++i) {
-			memcpy(&character, (void*)BUFFER_BASE_ADDR + i, 1);
-			xil_printf("%c", character);
-		}
-		xil_printf("\n\r");
-		kb_state.buffer_offset = 0;
+		// Reload the screen before the onscreen keyboard
+		vga_switch_to_KB_previous();
+
+		// Notify chat window to get the message in memory
+		kb_state.chat_kb_enter_pressed = 1;		// set flag enter pressed so that chat.c can retrieve message from onscreen kb
+		is_in_kb = 0;
 		break;
 	case FUNCTION_RETURN:
 		// Return implementation
 		// Reset the buffer offset
-		xil_printf("Return stub\n\r");
-		kb_state.buffer_offset = 0;
+
+		// If state is STATE_MENU, STATE_MENU_CONNECT, STATE_MENU_LISTEN
+		// Go back to STATE_MENU
+
+		// If state is STATE_REQUEST, STATE_CALL_CLIENT
+		// Go back to STATE_CALL_CLIENT, STATE_CALL_SERVER
+		vga_switch_to_KB_previous();
+
+		Keyboard_reset();
+		is_in_kb = 0;
 		break;
 	default:
 		if (kb_state.is_caplock_on == 0) {
@@ -179,7 +192,20 @@ void Press_center() {
 		}
 
 		memcpy((void*)BUFFER_BASE_ADDR + kb_state.buffer_offset, &character, 1);
+		// Display the character on vga here
+		vga_print_character(chat_buf_x_offset, chat_buf_y_offset, character);
+
+		// Move the offset to next location
 		kb_state.buffer_offset = kb_state.buffer_offset + 1;
+		chat_buf_x_offset += ALPHABET_CHAR_LENGTH;
+
+
+		// Go to next line
+		if (chat_buf_x_offset - ALPHABET_CHAR_LENGTH >= HORIZONTAL_PIXEL_MAX) {
+			chat_buf_x_offset = 0;
+			chat_buf_y_offset += ALPHABET_CHAR_LENGTH;
+		}
+
 		xil_printf("%c\n\r", character);
 		break;
 	}

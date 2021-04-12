@@ -6,6 +6,7 @@
 #include "state.h"
 #include "vga.h"
 #include "chat.h"
+#include "keyboard_logic.h"
 
 #define CMD_CLOSE "/close"
 #define RECEIVED_HEADER "Other: "
@@ -14,6 +15,7 @@
 
 extern struct netif netif;
 extern int state;
+extern keyboard_state kb_state;		// from keyboard_logic.c
 
 static int chat_box_x_offset = 0;
 static int chat_box_y_offset = VERTICAL_PIXEL_MAX/10;
@@ -37,6 +39,8 @@ void chat_loop(tcp_pcb *pcb)
 
 	if (XUartPs_IsReceiveData(XPAR_PS7_UART_1_BASEADDR)) {
 		c = XUartPs_ReadReg(XPAR_PS7_UART_1_BASEADDR, XUARTPS_FIFO_OFFSET);
+		// This can be the enter function of the keyboard
+		// e.g. if enter is pressed
 		if (c == '\r' || c == '\n') {
 			xil_printf("\n\r");
 
@@ -78,19 +82,70 @@ void chat_loop(tcp_pcb *pcb)
 			chat_buf_x_offset = 0;
 			if (chat_box_y_offset + ALPHABET_CHAR_LENGTH >= VERTICAL_PIXEL_MAX*4/5 - ALPHABET_CHAR_LENGTH) {
 				// TODO: Shift messages up
+				// Clear the entire message window and start again
 			}
 		}
 		else {
+			// Every time a char is pressed
 			if(strlen(buf) < MSG_MAX_LEN - 1) {
 				xil_printf("%c", c);
+				// Printing the single char on vga
 				vga_print_character(chat_buf_x_offset, chat_buf_y_offset, c);
 				chat_buf_x_offset += ALPHABET_CHAR_LENGTH;
+				// vga printing spacing
 				if (chat_buf_x_offset - ALPHABET_CHAR_LENGTH >= HORIZONTAL_PIXEL_MAX) {
 					chat_buf_x_offset = 0;
 					chat_buf_y_offset += ALPHABET_CHAR_LENGTH;
 				}
+				// concat the char to the end of the buffer
 				strncat(buf, &c, 1);
 			}
+		}
+	}
+
+	// If statement for on screen kb
+	if (kb_state.chat_kb_enter_pressed == 1) {
+		// Get the message from keyboard's buffer
+		memcpy(&buf, (void*)BUFFER_BASE_ADDR, kb_state.buffer_offset);
+
+		// Resetting onscreen keyboard data
+		Keyboard_reset();
+		kb_state.chat_kb_enter_pressed = 0;
+
+		// Encrypt message
+		crypt(buf, otp_key /*+ otp_key_pos*/, enc_msg);
+		xil_printf("Encrypted message: %s\n\r", enc_msg);
+
+		// Prepend message header to message
+		memcpy(sndbuf, msg_header, OFFSET_SZ);
+		//memcpy(sndbuf + KEY_POS_OFFSET, (void *)&otp_key_pos, OFFSET_SZ);
+		memcpy(sndbuf + MSG_OFFSET, (void *)enc_msg, strlen(enc_msg));
+
+		// Shift key
+		//otp_key_pos += strlen(buf);
+
+		// Write to packet and send message
+		err = tcp_write(pcb, (void *)sndbuf, strlen(sndbuf) + 1, TCP_WRITE_FLAG_COPY);
+		if (err != ERR_OK) {
+			xil_printf("ERROR: tcp_write() error: Code %d\n\r", err);
+		}
+		err = tcp_output(pcb);
+		if (err != ERR_OK) {
+			xil_printf("ERROR: tcp_output() error: Code %d\n\r", err);
+		}
+
+		// Print to VGA
+		vga_print_string(chat_box_x_offset, chat_box_y_offset, buf);
+		buf[0] = '\0';
+		sndbuf[0] = '\0';
+		vga_clear_chat_buf();
+		chat_box_y_offset += ALPHABET_CHAR_LENGTH;
+		// Resetting the offset location
+		chat_buf_y_offset = VERTICAL_PIXEL_MAX*4/5 - ALPHABET_CHAR_LENGTH;
+		chat_buf_x_offset = 0;
+		if (chat_box_y_offset + ALPHABET_CHAR_LENGTH >= VERTICAL_PIXEL_MAX*4/5 - ALPHABET_CHAR_LENGTH) {
+			// TODO: Shift messages up
+			// Clear the entire message window and start again
 		}
 	}
 }

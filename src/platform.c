@@ -8,6 +8,8 @@
 #include "netif/xadapter.h"
 #include "platform.h"
 #include "xgpio.h"
+#include "keyboard_logic.h"
+#include "state.h"
 
 
 // Parameter definitions
@@ -21,10 +23,13 @@
 #define BTNU 0x10
 #define BTNC 0x1
 #define BTND 0x2
-#define BTNR 0x4
-#define BTNL 0x8
+#define BTNL 0x4
+#define BTNR 0x8
 
 
+extern int state;		// From main.c
+
+int is_in_kb = 0;
 void tcp_tmr(void);
 
 static XScuTimer tmr_instance;
@@ -50,25 +55,46 @@ void BTN_Intr_Handler(void *InstancePtr)
 
 	switch (btn_value) {
 	case BTN_RELEASE:
-		xil_printf("Ignore releasing button\n\r");
+
 		break;
 	case BTNC:
-		xil_printf("Center button pressed\n\r");
+
 		// Cursor logic goes here
 
 		// KB logic goes here
+		if (is_in_kb == 1) {
+			Press_center();
+		}
 		break;
 	case BTNU:
-		xil_printf("Up button pressed\n\r");
+
+
+		if (is_in_kb == 1) {
+			Press_up();
+		}
 		break;
 	case BTND:
-		xil_printf("Down button pressed\n\r");
+
+
+		if (state == STATE_CALL_CLIENT || state == STATE_CALL_SERVER) {
+			if (is_in_kb == 1) {
+				Press_down();
+			} else {
+				xil_printf("Called Keyboard_init()\n\r");
+				Keyboard_init();
+				is_in_kb = 1;
+			}
+		}
 		break;
 	case BTNL:
-		xil_printf("Left button pressed\n\r");
+		if (is_in_kb == 1) {
+			Press_left();
+		}
 		break;
 	case BTNR:
-		xil_printf("Right button pressed\n\r");
+		if (is_in_kb == 1) {
+			Press_right();
+		}
 		break;
 	default:
 		break;
