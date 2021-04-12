@@ -94,7 +94,19 @@
 #define ALPHABET_QUESTION_OFFSET 0x2376C
 #define ALPHABET_OPEN_BRACKET_OFFSET 0x41578
 #define ALPHABET_CLOSE_BRACKET_OFFSET 0x41678
-// TODO: Add the rest of the special characters
+#define ALPHABET_OPEN_PARENTHESIS_OFFSET 0x12400
+#define ALPHABET_CLOSE_PARENTHESIS_OFFSET 0x12480
+#define ALPHABET_EXCLAMATION_OFFSET 0x12080
+#define ALPHABET_DOUBLE_QUOTE_OFFSET 0x12100
+#define ALPHABET_DOLLAR_OFFSET 0x12200
+#define ALPHABET_PERCENT_OFFSET 0x12280
+#define ALPHABET_AMPERSAND_OFFSET 0x12300
+#define ALPHABET_SINGLE_QUOTE_OFFSET 0x12380
+#define ALPHABET_ASTERISK_OFFSET 0x12500
+#define ALPHABET_PLUS_OFFSET 0x12580
+#define ALPHABET_COMMA_OFFSET 0x12600
+#define ALPHABET_MINUS_OFFSET 0x12680
+#define ALPHABET_BACKSLASH_OFFSET 0x425F0
 
 
 // Location of the buttons
@@ -184,6 +196,19 @@
 #define print_question_character(ptr) print_character(ptr, (int *)(ALPHABET_SPRITE_ADDR + ALPHABET_QUESTION_OFFSET))
 #define print_open_bracket_character(ptr) print_character(ptr, (int *)(ALPHABET_SPRITE_ADDR + ALPHABET_OPEN_BRACKET_OFFSET))
 #define print_close_bracket_character(ptr) print_character(ptr, (int *)(ALPHABET_SPRITE_ADDR + ALPHABET_CLOSE_BRACKET_OFFSET))
+#define print_open_parenthesis_character(ptr) print_character(ptr, (int *)(ALPHABET_SPRITE_ADDR + ALPHABET_OPEN_PARENTHESIS_OFFSET))
+#define print_close_parenthesis_character(ptr) print_character(ptr, (int *)(ALPHABET_SPRITE_ADDR + ALPHABET_CLOSE_PARENTHESIS_OFFSET))
+#define print_exclamation_character(ptr) print_character(ptr, (int *)(ALPHABET_SPRITE_ADDR + ALPHABET_EXCLAMATION_OFFSET))
+#define print_double_quote_character(ptr) print_character(ptr, (int *)(ALPHABET_SPRITE_ADDR + ALPHABET_DOUBLE_QUOTE_OFFSET))
+#define print_dollar_character(ptr) print_character(ptr, (int *)(ALPHABET_SPRITE_ADDR + ALPHABET_DOLLAR_OFFSET))
+#define print_percent_character(ptr) print_character(ptr, (int *)(ALPHABET_SPRITE_ADDR + ALPHABET_PERCENT_OFFSET))
+#define print_ampersand_character(ptr) print_character(ptr, (int *)(ALPHABET_SPRITE_ADDR + ALPHABET_AMPERSAND_OFFSET))
+#define print_single_quote_character(ptr) print_character(ptr, (int *)(ALPHABET_SPRITE_ADDR + ALPHABET_SINGLE_QUOTE_OFFSET))
+#define print_asterisk_character(ptr) print_character(ptr, (int *)(ALPHABET_SPRITE_ADDR + ALPHABET_ASTERISK_OFFSET))
+#define print_plus_character(ptr) print_character(ptr, (int *)(ALPHABET_SPRITE_ADDR + ALPHABET_PLUS_OFFSET))
+#define print_comma_character(ptr) print_character(ptr, (int *)(ALPHABET_SPRITE_ADDR + ALPHABET_COMMA_OFFSET))
+#define print_minus_character(ptr) print_character(ptr, (int *)(ALPHABET_SPRITE_ADDR + ALPHABET_MINUS_OFFSET))
+#define print_backslash_character(ptr) print_character(ptr, (int *)(ALPHABET_SPRITE_ADDR + ALPHABET_BACKSLASH_OFFSET))
 
 
 static int red = 0xFF0000FF;
@@ -379,215 +404,253 @@ static void print_string(int* image_pointer, char* str)
 	for (int i = 0; i < strlen(str); i++) {
 		switch(str[i]) {
 			case ' ':
-				print_SPACE_character(image_pointer + 32*i);
+				print_SPACE_character(image_pointer + ALPHABET_CHAR_LENGTH*i);
 				break;
 			case '.':
-				print_DOT_character(image_pointer + 32*i);
+				print_DOT_character(image_pointer + ALPHABET_CHAR_LENGTH*i);
 				break;
 			case '/':
-				print_slash_character(image_pointer + 32*i);
+				print_slash_character(image_pointer + ALPHABET_CHAR_LENGTH*i);
 				break;
 			case '0':
-				print_0_character(image_pointer + 32*i);
+				print_0_character(image_pointer + ALPHABET_CHAR_LENGTH*i);
 				break;
 			case '1':
-				print_1_character(image_pointer + 32*i);
+				print_1_character(image_pointer + ALPHABET_CHAR_LENGTH*i);
 				break;
 			case '2':
-				print_2_character(image_pointer + 32*i);
+				print_2_character(image_pointer + ALPHABET_CHAR_LENGTH*i);
 				break;
 			case '3':
-				print_3_character(image_pointer + 32*i);
+				print_3_character(image_pointer + ALPHABET_CHAR_LENGTH*i);
 				break;
 			case '4':
-				print_4_character(image_pointer + 32*i);
+				print_4_character(image_pointer + ALPHABET_CHAR_LENGTH*i);
 				break;
 			case '5':
-				print_5_character(image_pointer + 32*i);
+				print_5_character(image_pointer + ALPHABET_CHAR_LENGTH*i);
 				break;
 			case '6':
-				print_6_character(image_pointer + 32*i);
+				print_6_character(image_pointer + ALPHABET_CHAR_LENGTH*i);
 				break;
 			case '7':
-				print_7_character(image_pointer + 32*i);
+				print_7_character(image_pointer + ALPHABET_CHAR_LENGTH*i);
 				break;
 			case '8':
-				print_8_character(image_pointer + 32*i);
+				print_8_character(image_pointer + ALPHABET_CHAR_LENGTH*i);
 				break;
 			case '9':
-				print_9_character(image_pointer + 32*i);
+				print_9_character(image_pointer + ALPHABET_CHAR_LENGTH*i);
 				break;
 			case ':':
-				print_COLON_character(image_pointer + 32*i);
+				print_COLON_character(image_pointer + ALPHABET_CHAR_LENGTH*i);
 				break;
 			case 'A':
-				print_A_character(image_pointer + 32*i);
+				print_A_character(image_pointer + ALPHABET_CHAR_LENGTH*i);
 				break;
 			case 'B':
-				print_B_character(image_pointer + 32*i);
+				print_B_character(image_pointer + ALPHABET_CHAR_LENGTH*i);
 				break;
 			case 'C':
-				print_C_character(image_pointer + 32*i);
+				print_C_character(image_pointer + ALPHABET_CHAR_LENGTH*i);
 				break;
 			case 'D':
-				print_D_character(image_pointer + 32*i);
+				print_D_character(image_pointer + ALPHABET_CHAR_LENGTH*i);
 				break;
 			case 'E':
-				print_E_character(image_pointer + 32*i);
+				print_E_character(image_pointer + ALPHABET_CHAR_LENGTH*i);
 				break;
 			case 'F':
-				print_F_character(image_pointer + 32*i);
+				print_F_character(image_pointer + ALPHABET_CHAR_LENGTH*i);
 				break;
 			case 'G':
-				print_G_character(image_pointer + 32*i);
+				print_G_character(image_pointer + ALPHABET_CHAR_LENGTH*i);
 				break;
 			case 'H':
-				print_H_character(image_pointer + 32*i);
+				print_H_character(image_pointer + ALPHABET_CHAR_LENGTH*i);
 				break;
 			case 'I':
-				print_I_character(image_pointer + 32*i);
+				print_I_character(image_pointer + ALPHABET_CHAR_LENGTH*i);
 				break;
 			case 'J':
-				print_J_character(image_pointer + 32*i);
+				print_J_character(image_pointer + ALPHABET_CHAR_LENGTH*i);
 				break;
 			case 'K':
-				print_K_character(image_pointer + 32*i);
+				print_K_character(image_pointer + ALPHABET_CHAR_LENGTH*i);
 				break;
 			case 'L':
-				print_L_character(image_pointer + 32*i);
+				print_L_character(image_pointer + ALPHABET_CHAR_LENGTH*i);
 				break;
 			case 'M':
-				print_M_character(image_pointer + 32*i);
+				print_M_character(image_pointer + ALPHABET_CHAR_LENGTH*i);
 				break;
 			case 'N':
-				print_N_character(image_pointer + 32*i);
+				print_N_character(image_pointer + ALPHABET_CHAR_LENGTH*i);
 				break;
 			case 'O':
-				print_O_character(image_pointer + 32*i);
+				print_O_character(image_pointer + ALPHABET_CHAR_LENGTH*i);
 				break;
 			case 'P':
-				print_P_character(image_pointer + 32*i);
+				print_P_character(image_pointer + ALPHABET_CHAR_LENGTH*i);
 				break;
 			case 'Q':
-				print_Q_character(image_pointer + 32*i);
+				print_Q_character(image_pointer + ALPHABET_CHAR_LENGTH*i);
 				break;
 			case 'R':
-				print_R_character(image_pointer + 32*i);
+				print_R_character(image_pointer + ALPHABET_CHAR_LENGTH*i);
 				break;
 			case 'S':
-				print_S_character(image_pointer + 32*i);
+				print_S_character(image_pointer + ALPHABET_CHAR_LENGTH*i);
 				break;
 			case 'T':
-				print_T_character(image_pointer + 32*i);
+				print_T_character(image_pointer + ALPHABET_CHAR_LENGTH*i);
 				break;
 			case 'U':
-				print_U_character(image_pointer + 32*i);
+				print_U_character(image_pointer + ALPHABET_CHAR_LENGTH*i);
 				break;
 			case 'V':
-				print_V_character(image_pointer + 32*i);
+				print_V_character(image_pointer + ALPHABET_CHAR_LENGTH*i);
 				break;
 			case 'W':
-				print_W_character(image_pointer + 32*i);
+				print_W_character(image_pointer + ALPHABET_CHAR_LENGTH*i);
 				break;
 			case 'X':
-				print_X_character(image_pointer + 32*i);
+				print_X_character(image_pointer + ALPHABET_CHAR_LENGTH*i);
 				break;
 			case 'Y':
-				print_Y_character(image_pointer + 32*i);
+				print_Y_character(image_pointer + ALPHABET_CHAR_LENGTH*i);
 				break;
 			case 'Z':
-				print_Z_character(image_pointer + 32*i);
+				print_Z_character(image_pointer + ALPHABET_CHAR_LENGTH*i);
 				break;
 			case 'a':
-				print_a_character(image_pointer + 32*i);
+				print_a_character(image_pointer + ALPHABET_CHAR_LENGTH*i);
 				break;
 			case 'b':
-				print_b_character(image_pointer + 32*i);
+				print_b_character(image_pointer + ALPHABET_CHAR_LENGTH*i);
 				break;
 			case 'c':
-				print_c_character(image_pointer + 32*i);
+				print_c_character(image_pointer + ALPHABET_CHAR_LENGTH*i);
 				break;
 			case 'd':
-				print_d_character(image_pointer + 32*i);
+				print_d_character(image_pointer + ALPHABET_CHAR_LENGTH*i);
 				break;
 			case 'e':
-				print_e_character(image_pointer + 32*i);
+				print_e_character(image_pointer + ALPHABET_CHAR_LENGTH*i);
 				break;
 			case 'f':
-				print_f_character(image_pointer + 32*i);
+				print_f_character(image_pointer + ALPHABET_CHAR_LENGTH*i);
 				break;
 			case 'g':
-				print_g_character(image_pointer + 32*i);
+				print_g_character(image_pointer + ALPHABET_CHAR_LENGTH*i);
 				break;
 			case 'h':
-				print_h_character(image_pointer + 32*i);
+				print_h_character(image_pointer + ALPHABET_CHAR_LENGTH*i);
 				break;
 			case 'i':
-				print_i_character(image_pointer + 32*i);
+				print_i_character(image_pointer + ALPHABET_CHAR_LENGTH*i);
 				break;
 			case 'j':
-				print_j_character(image_pointer + 32*i);
+				print_j_character(image_pointer + ALPHABET_CHAR_LENGTH*i);
 				break;
 			case 'k':
-				print_k_character(image_pointer + 32*i);
+				print_k_character(image_pointer + ALPHABET_CHAR_LENGTH*i);
 				break;
 			case 'l':
-				print_l_character(image_pointer + 32*i);
+				print_l_character(image_pointer + ALPHABET_CHAR_LENGTH*i);
 				break;
 			case 'm':
-				print_m_character(image_pointer + 32*i);
+				print_m_character(image_pointer + ALPHABET_CHAR_LENGTH*i);
 				break;
 			case 'n':
-				print_n_character(image_pointer + 32*i);
+				print_n_character(image_pointer + ALPHABET_CHAR_LENGTH*i);
 				break;
 			case 'o':
-				print_o_character(image_pointer + 32*i);
+				print_o_character(image_pointer + ALPHABET_CHAR_LENGTH*i);
 				break;
 			case 'p':
-				print_p_character(image_pointer + 32*i);
+				print_p_character(image_pointer + ALPHABET_CHAR_LENGTH*i);
 				break;
 			case 'q':
-				print_q_character(image_pointer + 32*i);
+				print_q_character(image_pointer + ALPHABET_CHAR_LENGTH*i);
 				break;
 			case 'r':
-				print_r_character(image_pointer + 32*i);
+				print_r_character(image_pointer + ALPHABET_CHAR_LENGTH*i);
 				break;
 			case 's':
-				print_s_character(image_pointer + 32*i);
+				print_s_character(image_pointer + ALPHABET_CHAR_LENGTH*i);
 				break;
 			case 't':
-				print_t_character(image_pointer + 32*i);
+				print_t_character(image_pointer + ALPHABET_CHAR_LENGTH*i);
 				break;
 			case 'u':
-				print_u_character(image_pointer + 32*i);
+				print_u_character(image_pointer + ALPHABET_CHAR_LENGTH*i);
 				break;
 			case 'v':
-				print_v_character(image_pointer + 32*i);
+				print_v_character(image_pointer + ALPHABET_CHAR_LENGTH*i);
 				break;
 			case 'w':
-				print_w_character(image_pointer + 32*i);
+				print_w_character(image_pointer + ALPHABET_CHAR_LENGTH*i);
 				break;
 			case 'x':
-				print_x_character(image_pointer + 32*i);
+				print_x_character(image_pointer + ALPHABET_CHAR_LENGTH*i);
 				break;
 			case 'y':
-				print_y_character(image_pointer + 32*i);
+				print_y_character(image_pointer + ALPHABET_CHAR_LENGTH*i);
 				break;
 			case 'z':
-				print_z_character(image_pointer + 32*i);
+				print_z_character(image_pointer + ALPHABET_CHAR_LENGTH*i);
 				break;
 			case '?':
-				print_question_character(image_pointer + 32*i);
+				print_question_character(image_pointer + ALPHABET_CHAR_LENGTH*i);
 				break;
 			case '[':
-				print_open_bracket_character(image_pointer + 32*i);
+				print_open_bracket_character(image_pointer + ALPHABET_CHAR_LENGTH*i);
 				break;
 			case ']':
-				print_close_bracket_character(image_pointer + 32*i);
+				print_close_bracket_character(image_pointer + ALPHABET_CHAR_LENGTH*i);
+				break;
+			case '(':
+				print_open_parenthesis_character(image_pointer + ALPHABET_CHAR_LENGTH*i);
+				break;
+			case ')':
+				print_close_parenthesis_character(image_pointer + ALPHABET_CHAR_LENGTH*i);
+				break;
+			case '!':
+				print_exclamation_character(image_pointer + ALPHABET_CHAR_LENGTH*i);
+				break;
+			case '\"':
+				print_double_quote_character(image_pointer + ALPHABET_CHAR_LENGTH*i);
+				break;
+			case '$':
+				print_dollar_character(image_pointer + ALPHABET_CHAR_LENGTH*i);
+				break;
+			case '%':
+				print_percent_character(image_pointer + ALPHABET_CHAR_LENGTH*i);
+				break;
+			case '&':
+				print_ampersand_character(image_pointer + ALPHABET_CHAR_LENGTH*i);
+				break;
+			case '\'':
+				print_single_quote_character(image_pointer + ALPHABET_CHAR_LENGTH*i);
+				break;
+			case '*':
+				print_asterisk_character(image_pointer + ALPHABET_CHAR_LENGTH*i);
+				break;
+			case '+':
+				print_plus_character(image_pointer + ALPHABET_CHAR_LENGTH*i);
+				break;
+			case '-':
+				print_minus_character(image_pointer + ALPHABET_CHAR_LENGTH*i);
+				break;
+			case '\\':
+				print_backslash_character(image_pointer + ALPHABET_CHAR_LENGTH*i);
 				break;
 			case '#':
 				// Special char for backspace
-				backspace_character(image_pointer + 32*i);
+				backspace_character(image_pointer + ALPHABET_CHAR_LENGTH*i);
+				break;
+			default:
 				break;
 		}
 	}
