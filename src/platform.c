@@ -67,15 +67,27 @@ void BTN_Intr_Handler(void *InstancePtr)
 		}
 		break;
 	case BTNU:
-
-
-		if (is_in_kb == 1) {
-			Press_up();
+		if (state == STATE_MENU || state == STATE_MENU_CONNECT || state == STATE_MENU_LISTEN) {
+			if (is_in_kb == 1) {
+				Press_up();
+			}
 		}
+		if (state == STATE_CALL_CLIENT || state == STATE_CALL_SERVER) {
+			if (is_in_kb == 1) {
+				Press_up();
+			} else {
+				xil_printf("Called Recording()\n\r");
+				is_in_kb = 1;
+			}
+		}
+
 		break;
 	case BTND:
-
-
+		if (state == STATE_MENU || state == STATE_MENU_CONNECT || state == STATE_MENU_LISTEN) {
+			if (is_in_kb == 1) {
+				Press_down();
+			}
+		}
 		if (state == STATE_CALL_CLIENT || state == STATE_CALL_SERVER) {
 			if (is_in_kb == 1) {
 				Press_down();
@@ -87,14 +99,54 @@ void BTN_Intr_Handler(void *InstancePtr)
 		}
 		break;
 	case BTNL:
-		if (is_in_kb == 1) {
-			Press_left();
+		// IP Screen
+		if (state == STATE_MENU || state == STATE_MENU_CONNECT || state == STATE_MENU_LISTEN) {
+			// Connect
+			if (is_in_kb == 1) {
+				Press_left();
+			} else {
+				Keyboard_init();
+				is_in_kb = 1;
+				state = STATE_MENU_CONNECT;
+			}
 		}
+
+		// Chat Screen
+		if (state == STATE_CALL_CLIENT || state == STATE_CALL_SERVER) {
+			if (is_in_kb == 1) {
+				Press_left();
+			} else {
+					xil_printf("Called History()\n\r");
+					Keyboard_init();
+					is_in_kb = 1;
+				}
+			}
+
 		break;
 	case BTNR:
-		if (is_in_kb == 1) {
-			Press_right();
+		// IP Screen
+		if (state == STATE_MENU || state == STATE_MENU_CONNECT || state == STATE_MENU_LISTEN) {
+			// Listen
+			if (is_in_kb == 1) {
+				Press_right();
+			} else {
+				Keyboard_init();
+				is_in_kb = 1;
+				state = STATE_MENU_LISTEN;
+			}
 		}
+
+		// Chat Screen
+		if (state == STATE_CALL_CLIENT || state == STATE_CALL_SERVER) {
+			if (is_in_kb == 1) {
+				Press_right();
+			} else {
+				xil_printf("Called History()\n\r");
+				Keyboard_init();
+				is_in_kb = 1;
+			}
+		}
+
 		break;
 	default:
 		break;

@@ -47,6 +47,7 @@ void chat_loop(tcp_pcb *pcb)
 			if (strncmp(buf, CMD_CLOSE, strlen(CMD_CLOSE)) == 0) {
 				tcp_write(pcb, (void *)CMD_CLOSE, strlen(CMD_CLOSE), TCP_WRITE_FLAG_COPY);
 				tcp_output(pcb);
+				state = STATE_MENU;
 			}
 			else {
 				// Encrypt message

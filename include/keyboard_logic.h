@@ -18,4 +18,5 @@ struct keyboard_state_s {
 	int is_caplock_on;
 	char buffer_offset;	// Since we only want to increment the offset by 1 byte
 	int chat_kb_enter_pressed;
+	int ip_kb_enter_pressed;
 };

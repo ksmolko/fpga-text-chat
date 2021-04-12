@@ -368,7 +368,7 @@ void backspace_character(int* address) {
 	for (int y = 0; y < ALPHABET_CHAR_LENGTH; ++y) {
 		for (int x = 0; x < ALPHABET_CHAR_LENGTH; ++x) {
 			int addr_offset = HORIZONTAL_PIXEL_MAX*y + x;
-			memcpy(image_pointer + addr_offset, &yellow, 4);
+			memcpy(address + addr_offset, &yellow, 4);
 		}
 	}
 }
