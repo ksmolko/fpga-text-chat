@@ -13,8 +13,11 @@ void vga_clear_chat_buf();
 
 void vga_switch_to_IP();
 void vga_switch_to_KB();
+void vga_switch_to_KB_previous();
 void vga_switch_to_CHAT();
 void vga_switch_to_connect();
 void vga_switch_to_listen();
 
 void kb_move_cursor(int currentID, int nextID);
+void ip_move_cursor();
+void chat_move_cursor();

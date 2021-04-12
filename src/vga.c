@@ -96,6 +96,8 @@
 #define ALPHABET_CLOSE_BRACKET_OFFSET 0x41678
 // TODO: Add the rest of the special characters
 
+
+// Location of the buttons
 #define BUTTON_Y_OFFSET (HORIZONTAL_PIXEL_MAX*VERTICAL_PIXEL_MAX*21/24)
 #define BUTTON_CONNECT_OFFSET (BUTTON_Y_OFFSET + HORIZONTAL_PIXEL_MAX/4 - HORIZONTAL_PIXEL_MAX/18)
 #define BUTTON_LISTEN_OFFSET (BUTTON_Y_OFFSET + HORIZONTAL_PIXEL_MAX*3/4 - HORIZONTAL_PIXEL_MAX/18)
@@ -199,6 +201,9 @@ static int counter = 0;
 
 static int current_screen;
 
+static int *kb_screen_previous_ptr = (int *)0x05500000;
+static int kb_screen_previous_id;
+
 // Setting up a predefined address to access the sprites images
 // The sprites are uploaded to the board through xsct dow -data
 // TODO: Find a way to do this without using xsct shell
@@ -223,6 +228,7 @@ static void print_string(int* image_pointer, char* str);
 static void set_kb_square_key(int* image_pointer, int* kb_normal_sprite, int center_x, int center_y);
 static void set_kb_rectangle_key(int* image_pointer, int* kb_normal_sprite, int center_x, int center_y);
 static void set_kb_space_key(int* image_pointer, int* kb_normal_sprite, int center_x, int center_y);
+static void backspace_character(int* address);
 
 void setColours(int colour, int* image_pointer[5])
 {
@@ -326,21 +332,23 @@ void setColours(int colour, int* image_pointer[5])
 	for (int i = 0; i < KEYBOARD_NUM_OF_KEY_Y; ++i) {
 		for (int j = 0; j < KEYBOARD_NUM_OF_KEY_X; ++j) {
 			if (j != KEYBOARD_NUM_OF_KEY_X-1) {
-				set_kb_square_key(image_pointer[1], kb_selected_sprite[i*KEYBOARD_NUM_OF_KEY_X + j], kb_key_center_x[j], kb_key_center_y[i]);
+				set_kb_square_key(image_pointer[1], kb_normal_sprite[i*KEYBOARD_NUM_OF_KEY_X + j], kb_key_center_x[j], kb_key_center_y[i]);
 			} else {
-				set_kb_rectangle_key(image_pointer[1], kb_selected_sprite[i*KEYBOARD_NUM_OF_KEY_X + j], kb_key_center_x[j], kb_key_center_y[i]);
+				set_kb_rectangle_key(image_pointer[1], kb_normal_sprite[i*KEYBOARD_NUM_OF_KEY_X + j], kb_key_center_x[j], kb_key_center_y[i]);
 			}
 		}
 	}
+
+	set_kb_square_key(image_pointer[1], kb_selected_sprite[0], kb_key_center_x[0], kb_key_center_y[0]);
 
 	//print_character(image_pointer[0] + BUTTON_CONNECT_OFFSET, (int *)(ALPHABET_SPRITE_ADDR + ALPHABET_C_OFFSET));
 	print_string(image_pointer[0] + BUTTON_CONNECT_OFFSET, "CONNECT");
 	print_string(image_pointer[0] + BUTTON_LISTEN_OFFSET, "LISTEN");
 
-	print_string(image_pointer[2] + BUTTON_HISTORY_OFFSET, "HISTORY");
-	print_string(image_pointer[2] + BUTTON_KEYBOARD_OFFSET, "KEYBOARD");
-	print_string(image_pointer[2] + BUTTON_RECORDING_OFFSET, "RECORDING");
-	print_string(image_pointer[2] + BUTTON_CLOSE_OFFSET, "CLOSE");
+	print_string(image_pointer[2] + BUTTON_HISTORY_OFFSET, "HISTORY(L)");
+	print_string(image_pointer[2] + BUTTON_KEYBOARD_OFFSET, "KEYBOARD(D)");
+	print_string(image_pointer[2] + BUTTON_RECORDING_OFFSET, "RECORDING(U)");
+	print_string(image_pointer[2] + BUTTON_CLOSE_OFFSET, "CLOSE(R)");
 
 	set_kb_space_key(image_pointer[1], kb_selected_sprite[48], kb_space_center_x, kb_space_center_y);
 }
@@ -355,6 +363,16 @@ static void print_character(int* image_pointer, int* sprite)
 		}
 	}
 }
+
+void backspace_character(int* address) {
+	for (int y = 0; y < ALPHABET_CHAR_LENGTH; ++y) {
+		for (int x = 0; x < ALPHABET_CHAR_LENGTH; ++x) {
+			int addr_offset = HORIZONTAL_PIXEL_MAX*y + x;
+			memcpy(image_pointer + addr_offset, &yellow, 4);
+		}
+	}
+}
+
 
 static void print_string(int* image_pointer, char* str)
 {
@@ -567,6 +585,10 @@ static void print_string(int* image_pointer, char* str)
 			case ']':
 				print_close_bracket_character(image_pointer + 32*i);
 				break;
+			case '#':
+				// Special char for backspace
+				backspace_character(image_pointer + 32*i);
+				break;
 		}
 	}
 }
@@ -662,8 +684,20 @@ void vga_switch_to_IP() {
 }
 
 void vga_switch_to_KB() {
+	// Save the current screen before switching
+	memcpy(kb_screen_previous_ptr, (void*)IMG_BUF_PTR, NUM_BYTES_BUFFER);
+	kb_screen_previous_id = current_screen;
+	// Update the screen to on screen keyboard
 	current_screen = SCREEN_KB;
 	vga_update();
+}
+
+void vga_switch_to_KB_previous() {
+	// Load the previous screen before changing to KB
+	// This way, keyboard will just be a substate that belongs to a state controlled by main.c
+	// Don't need to add another state in state.h
+	memcpy((void*)IMG_BUF_PTR, kb_screen_previous_ptr, NUM_BYTES_BUFFER);
+	current_screen = kb_screen_previous_id;
 }
 
 void vga_switch_to_CHAT() {
@@ -734,6 +768,18 @@ void kb_move_cursor(int currentID, int nextID) {
 	} else {
 		set_kb_square_key((void*)IMG_BUF_PTR, kb_selected_sprite[nextID], kb_key_center_x[nextX], kb_key_center_y[nextY]);
 	}
+}
+
+void ip_move_cursor() {
+	// Clear the cursor of the current button
+
+	// Enable the cursor for the selected button
+}
+
+void chat_move_cursor() {
+	// Clear the cursor of the current button
+
+	// Enable the cursor for the selected button
 }
 
 // Deprecated
