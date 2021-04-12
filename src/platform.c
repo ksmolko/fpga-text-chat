@@ -30,6 +30,8 @@
 extern int state;		// From main.c
 
 int is_in_kb = 0;
+int is_accept = 0;
+int is_close_connection = 0;
 void tcp_tmr(void);
 
 static XScuTimer tmr_instance;
@@ -77,7 +79,7 @@ void BTN_Intr_Handler(void *InstancePtr)
 				Press_up();
 			} else {
 				xil_printf("Called Recording()\n\r");
-				is_in_kb = 1;
+
 			}
 		}
 
@@ -111,14 +113,17 @@ void BTN_Intr_Handler(void *InstancePtr)
 			}
 		}
 
+		if (state == STATE_ACCEPT) {
+			is_accept = 1;
+		}
+
 		// Chat Screen
 		if (state == STATE_CALL_CLIENT || state == STATE_CALL_SERVER) {
 			if (is_in_kb == 1) {
 				Press_left();
 			} else {
 					xil_printf("Called History()\n\r");
-					Keyboard_init();
-					is_in_kb = 1;
+
 				}
 			}
 
@@ -136,14 +141,17 @@ void BTN_Intr_Handler(void *InstancePtr)
 			}
 		}
 
+		if (state == STATE_ACCEPT) {
+			is_accept = 2;
+		}
+
 		// Chat Screen
 		if (state == STATE_CALL_CLIENT || state == STATE_CALL_SERVER) {
 			if (is_in_kb == 1) {
 				Press_right();
 			} else {
-				xil_printf("Called History()\n\r");
-				Keyboard_init();
-				is_in_kb = 1;
+				xil_printf("Called Close()\n\r");
+				is_close_connection = 1;
 			}
 		}
 

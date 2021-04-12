@@ -16,6 +16,7 @@
 extern struct netif netif;
 extern int state;
 extern keyboard_state kb_state;		// from keyboard_logic.c
+extern int is_close_connection;		// from platform.c
 
 static int chat_box_x_offset = 0;
 static int chat_box_y_offset = VERTICAL_PIXEL_MAX/10;
@@ -148,6 +149,12 @@ void chat_loop(tcp_pcb *pcb)
 			// TODO: Shift messages up
 			// Clear the entire message window and start again
 		}
+	}
+
+	if (is_close_connection == 1) {
+		tcp_write(pcb, (void *)CMD_CLOSE, strlen(CMD_CLOSE), TCP_WRITE_FLAG_COPY);
+		tcp_output(pcb);
+		state = STATE_MENU;
 	}
 }
 

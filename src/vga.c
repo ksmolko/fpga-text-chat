@@ -339,11 +339,11 @@ void setColours(int colour, int* image_pointer[5])
 		}
 	}
 
-	set_kb_square_key(image_pointer[1], kb_selected_sprite[0], kb_key_center_x[0], kb_key_center_y[0]);
+	set_kb_square_key(image_pointer[1], kb_normal_sprite[0], kb_key_center_x[0], kb_key_center_y[0]);
 
 	//print_character(image_pointer[0] + BUTTON_CONNECT_OFFSET, (int *)(ALPHABET_SPRITE_ADDR + ALPHABET_C_OFFSET));
-	print_string(image_pointer[0] + BUTTON_CONNECT_OFFSET, "CONNECT");
-	print_string(image_pointer[0] + BUTTON_LISTEN_OFFSET, "LISTEN");
+	print_string(image_pointer[0] + BUTTON_CONNECT_OFFSET, "CONNECT(L)");
+	print_string(image_pointer[0] + BUTTON_LISTEN_OFFSET, "LISTEN(R)");
 
 	print_string(image_pointer[2] + BUTTON_HISTORY_OFFSET, "HISTORY(L)");
 	print_string(image_pointer[2] + BUTTON_KEYBOARD_OFFSET, "KEYBOARD(D)");

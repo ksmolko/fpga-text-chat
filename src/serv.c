@@ -30,6 +30,7 @@ extern volatile int dhcp_timeout_counter;
 extern int state;
 extern char otp_key[KEY_LEN];
 extern const char *key_header;
+extern int is_accept;	// From platform.c
 struct netif netif;
 static tcp_pcb *serv_pcb;
 static int status_x_offset = 0;
@@ -157,11 +158,39 @@ void serv_loop()
 				xil_printf("Invalid selection, try again: ");
 			}
 		}
-
-		// Accept or decline request from push buttons
-		// Check platform.c
 	}
+	// Accept or decline request from push buttons
+	// Check platform.c
+	if (is_accept == 1) {
+		state = STATE_CALL_SERVER;
+		xil_printf("Chat has begun\n\n\r");
+		vga_switch_to_CHAT();
+		vga_print_string(status_x_offset, status_y_offset, ipaddr_ntoa((ip_addr_t *)&(serv_pcb->remote_ip)));
+		status_y_offset += ALPHABET_CHAR_LENGTH;
+		sprintf(port_str, "%d", serv_pcb->remote_port);
+		vga_print_string(status_x_offset, status_y_offset, port_str);
+		err = tcp_write(serv_pcb, (void *)&c, 1, TCP_WRITE_FLAG_COPY);
+		if (err != ERR_OK) {
+			xil_printf("ERROR: tcp_write() error: Code %d\n\r", err);
+		}
+		err = tcp_output(serv_pcb);
+		if (err != ERR_OK) {
+			xil_printf("ERROR: tcp_output() error: Code %d\n\r", err);
+		}
 
+		// Send encryption key
+		chat_send_key();
+		is_accept = 0;
+	} else if (is_accept == 2) {
+		state = STATE_MENU;
+		xil_printf("Refusing connection. Returning to menu\n\r");
+		vga_switch_to_IP();
+		tcp_write(serv_pcb, (void *)&c, 1, TCP_WRITE_FLAG_COPY);
+		tcp_output(serv_pcb);
+		tcp_close(serv_pcb);
+		tcp_recv(serv_pcb, NULL);
+		is_accept = 0;
+	}
 }
 
 static err_t echo_accept_callback(void *arg, tcp_pcb *pcb, err_t err)
@@ -205,9 +234,9 @@ static err_t chat_accept_callback(void *arg, tcp_pcb *pcb, err_t err)
 	serv_pcb = pcb;
 
 	xil_printf("Incoming Connection Request. Accept? [y/n]: ");
-	vga_print_string(HORIZONTAL_PIXEL_MAX/4
+	vga_print_string(0
 			, VERTICAL_PIXEL_MAX/2
-			, "Incoming Connection Request. Accept? [y/n]");
+			, "Incoming Connection Request. Accept? [yes(L)/no(R)]");
 	tcp_recv(pcb, chat_recv_callback);
 
 	if (err != ERR_OK) {
