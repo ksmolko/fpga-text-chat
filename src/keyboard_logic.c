@@ -50,6 +50,7 @@ void Keyboard_init() {
 	kb_state.is_caplock_on = 0;
 	kb_state.buffer_offset = 0;
 	kb_state.chat_kb_enter_pressed = 0;
+	kb_state.ip_kb_enter_pressed = 0;
 	vga_switch_to_KB();
 }
 
@@ -134,10 +135,7 @@ void Press_center() {
 		// Backspace implementation
 		// Decrease the buffer offset by 1
 		kb_state.buffer_offset = kb_state.buffer_offset - 1;
-
 		// Update the vga
-		// Clear the last character on vga
-		vga_print_character(chat_buf_x_offset, chat_buf_y_offset, '#');
 		// Move the offset back by 1 char
 		if (chat_buf_x_offset == 0 && chat_buf_y_offset > 0) {
 			// First character on next line
@@ -147,6 +145,9 @@ void Press_center() {
 			// A character in a line
 			chat_buf_x_offset -= ALPHABET_CHAR_LENGTH;
 		}
+
+		// Clear the last character on vga
+		vga_print_character(chat_buf_x_offset, chat_buf_y_offset, '#');
 
 		break;
 	case FUNCTION_CAPLOCK:
@@ -168,6 +169,7 @@ void Press_center() {
 
 		// Notify chat window to get the message in memory
 		kb_state.chat_kb_enter_pressed = 1;		// set flag enter pressed so that chat.c can retrieve message from onscreen kb
+		kb_state.ip_kb_enter_pressed = 1;
 		is_in_kb = 0;
 		break;
 	case FUNCTION_RETURN:
