@@ -86,8 +86,11 @@ static err_t chat_recv_callback(void *arg, tcp_pcb *pcb, pbuf *p, err_t err)
 		return ERR_OK;
 	}
 
+	char test[10] = "";
 	if (state == STATE_REQUEST) {
 		if (err == ERR_OK && p != NULL) {
+			pbuf_copy_partial(p, test, p->tot_len, 0);
+			xil_printf("Response received: %s\n\r", test);
 			tcp_recved(pcb, p->len);
 
 			if (tcp_sndbuf(pcb) > p->len) {
@@ -107,6 +110,7 @@ static err_t chat_recv_callback(void *arg, tcp_pcb *pcb, pbuf *p, err_t err)
 					tcp_recv(pcb, NULL);
 				}
 				else {
+
 					state = STATE_MENU;
 					xil_printf("Indeterminate connection state. Returning to menu.");
 					tcp_close(pcb);

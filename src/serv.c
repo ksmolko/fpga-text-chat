@@ -111,6 +111,7 @@ void serv_loop()
 	char c;
 	char port_str[6];
 	err_t err;
+	char c_t;
 
 	xemacif_input(&netif);
 
@@ -118,8 +119,41 @@ void serv_loop()
 		chat_loop(serv_pcb);
 	}
 	else if (state == STATE_ACCEPT) {
-		// Accept or decline request from UART
-		if (XUartPs_IsReceiveData(XPAR_PS7_UART_1_BASEADDR)) {
+		// Accept or decline request from push buttons
+		// Check platform.c
+		if (is_accept == 1) {
+			c_t = 'y';
+			state = STATE_CALL_SERVER;
+			xil_printf("Chat has begun\n\n\r");
+			vga_switch_to_CHAT();
+			vga_print_string(status_x_offset, status_y_offset, ipaddr_ntoa((ip_addr_t *)&(serv_pcb->remote_ip)));
+			status_y_offset += ALPHABET_CHAR_LENGTH;
+			sprintf(port_str, "%d", serv_pcb->remote_port);
+			vga_print_string(status_x_offset, status_y_offset, port_str);
+			err = tcp_write(serv_pcb, (void *)&c_t, 1, TCP_WRITE_FLAG_COPY);
+			if (err != ERR_OK) {
+				xil_printf("ERROR: tcp_write() error: Code %d\n\r", err);
+			}
+			err = tcp_output(serv_pcb);
+			if (err != ERR_OK) {
+				xil_printf("ERROR: tcp_output() error: Code %d\n\r", err);
+			}
+
+			// Send encryption key
+			chat_send_key();
+			is_accept = 0;
+		} else if (is_accept == 2) {
+			c_t = 'n';
+			state = STATE_MENU;
+			xil_printf("Refusing connection. Returning to menu\n\r");
+			vga_switch_to_IP();
+			tcp_write(serv_pcb, (void *)&c_t, 1, TCP_WRITE_FLAG_COPY);
+			tcp_output(serv_pcb);
+			tcp_close(serv_pcb);
+			tcp_recv(serv_pcb, NULL);
+			is_accept = 0;
+		}
+		else if (XUartPs_IsReceiveData(XPAR_PS7_UART_1_BASEADDR)) {
 			c = XUartPs_ReadReg(XPAR_PS7_UART_1_BASEADDR, XUARTPS_FIFO_OFFSET);
 			xil_printf("%c\n\r", c);
 			// Accept the request logic
@@ -158,39 +192,9 @@ void serv_loop()
 				xil_printf("Invalid selection, try again: ");
 			}
 		}
-	}
-	// Accept or decline request from push buttons
-	// Check platform.c
-	if (is_accept == 1) {
-		state = STATE_CALL_SERVER;
-		xil_printf("Chat has begun\n\n\r");
-		vga_switch_to_CHAT();
-		vga_print_string(status_x_offset, status_y_offset, ipaddr_ntoa((ip_addr_t *)&(serv_pcb->remote_ip)));
-		status_y_offset += ALPHABET_CHAR_LENGTH;
-		sprintf(port_str, "%d", serv_pcb->remote_port);
-		vga_print_string(status_x_offset, status_y_offset, port_str);
-		err = tcp_write(serv_pcb, (void *)&c, 1, TCP_WRITE_FLAG_COPY);
-		if (err != ERR_OK) {
-			xil_printf("ERROR: tcp_write() error: Code %d\n\r", err);
-		}
-		err = tcp_output(serv_pcb);
-		if (err != ERR_OK) {
-			xil_printf("ERROR: tcp_output() error: Code %d\n\r", err);
-		}
 
-		// Send encryption key
-		chat_send_key();
-		is_accept = 0;
-	} else if (is_accept == 2) {
-		state = STATE_MENU;
-		xil_printf("Refusing connection. Returning to menu\n\r");
-		vga_switch_to_IP();
-		tcp_write(serv_pcb, (void *)&c, 1, TCP_WRITE_FLAG_COPY);
-		tcp_output(serv_pcb);
-		tcp_close(serv_pcb);
-		tcp_recv(serv_pcb, NULL);
-		is_accept = 0;
 	}
+
 }
 
 static err_t echo_accept_callback(void *arg, tcp_pcb *pcb, err_t err)

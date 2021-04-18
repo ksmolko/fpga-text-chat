@@ -49,6 +49,9 @@ void chat_loop(tcp_pcb *pcb)
 				tcp_write(pcb, (void *)CMD_CLOSE, strlen(CMD_CLOSE), TCP_WRITE_FLAG_COPY);
 				tcp_output(pcb);
 				state = STATE_MENU;
+				tcp_close(pcb);
+				xil_printf("\n\rClosing connection\n\rReturning to menu\n\r");
+				vga_switch_to_IP();
 			}
 			else {
 				// Encrypt message
@@ -155,6 +158,9 @@ void chat_loop(tcp_pcb *pcb)
 		tcp_write(pcb, (void *)CMD_CLOSE, strlen(CMD_CLOSE), TCP_WRITE_FLAG_COPY);
 		tcp_output(pcb);
 		state = STATE_MENU;
+		tcp_close(pcb);
+		xil_printf("\n\rClosing connection\n\rReturning to menu\n\r");
+		vga_switch_to_IP();
 	}
 }
 
